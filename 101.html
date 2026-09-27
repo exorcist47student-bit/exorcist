@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>101 Game Pro</title>
+    <style>
+        body { background: #121212; color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; text-align: center; margin: 0; }
+        
+        /* Верхняя панель */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px; }
+        .round-badge { background: #30d158; color: black; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        
+        /* Ввод игроков */
+        .setup { display: flex; gap: 10px; margin-bottom: 25px; }
+        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #1e1e1e; color: white; font-size: 16px; outline: none; }
+        button { border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        .btn-add { background: #0a84ff; color: white; padding: 0 20px; }
+        
+        /* Карточка игрока */
+        .card { background: #1e1e1e; padding: 16px; margin-bottom: 12px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .p-info { text-align: left; display: flex; flex-direction: column; }
+        .p-name { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+        .p-stats { font-size: 14px; color: #8e8e93; }
+        .p-score { color: #0a84ff; font-weight: bold; font-size: 18px; }
+        .p-rem { color: #636366; margin-left: 8px; }
+        
+        /* Кнопки действий */
+        .actions { display: flex; gap: 10px; }
+        .btn-plus { background: #30d158; color: black; width: 44px; height: 44px; border-radius: 50%; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        .btn-del { background: transparent; color: #ff453a; font-size: 20px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+
+        /* Модальное окно */
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal { background: #2c2c2e; padding: 25px; border-radius: 20px; width: 80%; max-width: 300px; text-align: center; }
+        .modal h3 { margin-top: 0; }
+        .modal input { width: 90%; margin: 15px 0; text-align: center; font-size: 24px; background: #1c1c1e; }
+        .modal-btns { display: flex; gap: 10px; justify-content: center; }
+        .modal-btns button { flex: 1; padding: 12px; }
+        .btn-cancel { background: #3a3a3c; color: white; }
+        .btn-ok { background: #0a84ff; color: white; }
+
+        /* Уведомление о конце круга */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #30d158; color: black; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="font-weight:bold; font-size:20px;"> 101</div>
+        <div class="round-badge">Круг <span id="roundNum">1</span></div>
+    </div>
+
+    <div class="setup">
+        <input type="text" id="nameInput" placeholder="Имя игрока..." onkeypress="if(event.key==='Enter') addPlayer()">
+        <button class="btn-add" onclick="addPlayer()">+</button>
+    </div>
+
+    <div id="gameArea"></div>
+
+    <!-- Модалка ввода -->
+    <div id="scoreModal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modalTitle">Очки</h3>
+            <input type="number" id="scoreInput" placeholder="0" inputmode="numeric">
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn-ok" onclick="confirmScore()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Тост уведомление -->
+    <div id="toast" class="toast">Круг завершен! +1</div>
+
+    <script>
+        let players = JSON.parse(localStorage.getItem('p101_v2')) || [];
+        let round = parseInt(localStorage.getItem('p101_round')) || 1;
+        let targetId = null;
+
+        function save() { 
+            localStorage.setItem('p101_v2', JSON.stringify(players)); 
+            localStorage.setItem('p101_round', round);
+            render(); 
+        }
+
+        function addPlayer() {
+            const inp = document.getElementById('nameInput');
+            const name = inp.value.trim();
+            if(name) { 
+                players.push({id: Date.now(), name: name, score: 0}); 
+                inp.value=''; 
+                save(); 
+            }
+        }
+
+        function openModal(id) {
+            targetId = id;
+            const p = players.find(x => x.id === id);
+            document.getElementById('modalTitle').innerText = p.name;
+            document.getElementById('scoreInput').value = '';
+            document.getElementById('scoreModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('scoreInput').focus(), 100);
+        }
+
+        function closeModal() {
+            document.getElementById('scoreModal').style.display = 'none';
+            targetId = null;
+        }
+
+        function confirmScore() {
+            const val = parseInt(document.getElementById('scoreInput').value);
+            if(isNaN(val)) { closeModal(); return; }
+
+            const p = players.find(x => x.id === targetId);
+            if(!p) return;
+
+            let newScore = p.score + val;
+            let globalReset = false;
+
+            // Логика правил
+            if (newScore > 101) {
+                alert("⚠️ ПЕРЕБОР! Все обнулено.");
+                players.forEach(x => x.score = 0);
+                globalReset = true; // Перебор тоже завершает круг технически
+            } else if (newScore === 101) {
+                p.score = 0;
+            } else {
+                p.score = newScore;
+            }
+
+            closeModal();
+            
+            // Проверка на конец круга
+            checkRoundEnd(globalReset);
+            save();
+        }
+
+        function checkRoundEnd(forced) {
+            // Круг завершен, если у ВСЕХ игроков счет 0
+            const allZero = players.every(p => p.score === 0);
+            
+            if (allZero && players.length > 0) {
+                round++;
+                showToast();
+            }
+        }
+
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function removePlayer(id) {
+            if(confirm("Удалить игрока?")) { 
+                players = players.filter(x => x.id !== id); 
+                save(); 
+            }
+        }
+
+        function render() {
+            document.getElementById('roundNum').innerText = round;
+            const area = document.getElementById('gameArea');
+            area.innerHTML = '';
+            
+            // Сортировка: активные (с очками) сверху, нули внизу
+            players.sort((a,b) => {
+                if (a.score === 0 && b.score !== 0) return 1;
+                if (a.score !== 0 && b.score === 0) return -1;
+                return b.score - a.score;
+            });
+
+            players.forEach(p => {
+                const rem = p.score > 0 ? (101 - p.score) : '-';
+                const remClass = p.score > 0 ? '' : 'color:#48484a';
+                
+                area.innerHTML += `
+                    <div class="card">
+                        <div class="p-info">
+                            <div class="p-name">${p.name}</div>
+                            <div class="p-stats">
+                                <span class="p-score">${p.score}</span>
+                                <span class="p-rem" style="${remClass}">(${rem})</span>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-del" onclick="removePlayer(${p.id})">✕</button>
+                            <button class="btn-plus" onclick="openModal(${p.id})">+</button>
+                        </div>
+                    </div>`;
+            });
+        }
+        render();
+    </script>
+</body>
+</html>
