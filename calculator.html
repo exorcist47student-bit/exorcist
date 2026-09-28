@@ -145,20 +145,25 @@
 
     <script>
         let cards = [];
-        const MAX_CARDS_PER_TYPE = 4;
+        // CORRECTED LIMITS: Only 1 Queen of Hearts, 3 regular Queens
+        const LIMITS = {
+            '6': 4, '7': 4, '8': 4, '10': 4, 'J': 4, 'K': 4, 'A': 4,
+            'Q': 3,   // Only 3 non-heart queens in deck
+            'QH': 1   // Only 1 queen of hearts in deck
+        };
 
         function addCard(type, baseValue) {
-            // 1. Проверка лимита конкретного типа
+            // 1. Check individual type limit
             const currentCount = cards.filter(c => c.type === type).length;
-            if (currentCount >= MAX_CARDS_PER_TYPE) {
+            if (currentCount >= LIMITS[type]) {
                 triggerShake(type); return;
             }
 
-            // 2. ПРОВЕРКА ОБЩЕГО ЛИМИТА ДЛЯ ДАМ (Q + QH <= 4)
+            // 2. Check combined Queen limit (Q + QH <= 4)
             if (type === 'Q' || type === 'QH') {
                 const qCount = cards.filter(c => c.type === 'Q').length;
                 const qhCount = cards.filter(c => c.type === 'QH').length;
-                if ((qCount + qhCount) >= MAX_CARDS_PER_TYPE) {
+                if ((qCount + qhCount) >= 4) {
                     triggerShake(type); return;
                 }
             }
@@ -210,10 +215,10 @@
 
             document.getElementById('totalDisplay').innerText = total;
 
-            // Обновляем обычные карты
+            // Update regular cards
             ['6','7','8','10','J','K','A'].forEach(t => updateCounter(t, counts[t]));
             
-            // Обновляем Дам с учетом общего лимита
+            // Update Queens with combined limit logic
             const qCount = counts['Q'] || 0;
             const qhCount = counts['QH'] || 0;
             const totalQueens = qCount + qhCount;
@@ -227,7 +232,7 @@
             const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
-            btn.classList.toggle('disabled', count >= MAX_CARDS_PER_TYPE);
+            btn.classList.toggle('disabled', count >= LIMITS[type]);
         }
 
         function updateQueenUI(type, count, totalQueens, isSoloHand, btnId, descId) {
@@ -238,9 +243,10 @@
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
             
-            // Блокировка, если общий лимит дам исчерпан
-            const isMaxedOut = totalQueens >= MAX_CARDS_PER_TYPE;
-            btn.classList.toggle('disabled', isMaxedOut);
+            // Block if individual OR combined limit reached
+            const individualMaxed = count >= LIMITS[type];
+            const combinedMaxed = totalQueens >= 4;
+            btn.classList.toggle('disabled', individualMaxed || combinedMaxed);
 
             if (count > 0 && isSoloHand) {
                 btn.classList.add('solo');
