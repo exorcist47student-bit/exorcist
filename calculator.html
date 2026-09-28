@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>101 Calculator</title>
+    <style>
+        :root {
+            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
+            --accent: #0a84ff; --danger: #ff453a; --success: #30d158; 
+            --warn: #ffd60a; --heart: #ff375f; --border: #333333;
+        }
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f2f2f7; --card: #ffffff; --text: #000000; --sub: #636366;
+                --accent: #007aff; --danger: #ff3b30; --success: #34c759; 
+                --warn: #ffcc00; --heart: #ff2d55; --border: #e5e5ea;
+            }
+        }
+
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; 
+            margin: 0; padding: 20px; height: 100vh; box-sizing: border-box;
+            display: flex; flex-direction: column; transition: background 0.3s;
+        }
+
+        /* Header & Total */
+        .header { text-align: center; margin-bottom: 30px; }
+        .total-label { font-size: 14px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .total-value { font-size: 72px; font-weight: 800; line-height: 1; transition: transform 0.1s; }
+        .total-value.bump { transform: scale(1.1); }
+
+        /* Grid Layout */
+        .grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; 
+            flex: 1; align-content: start; max-width: 500px; margin: 0 auto; width: 100%;
+        }
+
+        .btn-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+            height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.1s; position: relative; overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-card:active { transform: scale(0.95); background: var(--border); }
+        
+        .card-val { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .card-desc { font-size: 12px; color: var(--sub); }
+        .card-count { 
+            position: absolute; top: 8px; right: 10px; 
+            font-size: 12px; font-weight: 600; color: var(--sub); opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .card-count.visible { opacity: 1; }
+        
+        /* Special Styles for Queens */
+        .btn-q.solo .card-count { color: var(--warn); opacity: 1; }
+        .btn-qh.solo .card-count { color: var(--heart); opacity: 1; }
+        .btn-qh .card-val { color: var(--heart); }
+
+        /* Footer Controls */
+        .controls { 
+            display: flex; gap: 12px; margin-top: auto; padding-top: 20px; 
+            max-width: 500px; width: 100%; margin-left: auto; margin-right: auto;
+        }
+        .btn-ctrl { 
+            flex: 1; padding: 18px; border-radius: 16px; border: none; 
+            font-size: 18px; font-weight: 600; cursor: pointer; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-reset { background: var(--card); color: var(--danger); border: 1px solid var(--border); }
+        .btn-done { background: var(--accent); color: white; }
+
+        /* Toast for Solo Bonus Info */
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--card); color: var(--text); padding: 10px 20px;
+            border-radius: 20px; font-size: 14px; border: 1px solid var(--border);
+            opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="total-label">Итого очков</div>
+        <div class="total-value" id="totalDisplay">0</div>
+    </div>
+
+    <div class="grid">
+        <!-- Row 1 -->
+        <div class="btn-card" onclick="addCard('6', 6)">
+            <span class="card-count" id="count-6">0</span>
+            <span class="card-val">6</span>
+            <span class="card-desc">+6</span>
+        </div>
+        <div class="btn-card" onclick="addCard('7', 7)">
+            <span class="card-count" id="count-7">0</span>
+            <span class="card-val">7</span>
+            <span class="card-desc">+7</span>
+        </div>
+        <div class="btn-card" onclick="addCard('8', 8)">
+            <span class="card-count" id="count-8">0</span>
+            <span class="card-val">8</span>
+            <span class="card-desc">+8</span>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="btn-card" onclick="addCard('10', 10)">
+            <span class="card-count" id="count-10">0</span>
+            <span class="card-val">10</span>
+            <span class="card-desc">+10</span>
+        </div>
+        <div class="btn-card" onclick="addCard('J', 2)">
+            <span class="card-count" id="count-J">0</span>
+            <span class="card-val">J</span>
+            <span class="card-desc">+2</span>
+        </div>
+        <div class="btn-card btn-q" id="btn-q" onclick="addCard('Q', 3)">
+            <span class="card-count" id="count-Q">0</span>
+            <span class="card-val">Q</span>
+            <span class="card-desc" id="desc-Q">+3</span>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="btn-card btn-qh" id="btn-qh" onclick="addCard('QH', 3)">
+            <span class="card-count" id="count-QH">0</span>
+            <span class="card-val">Q♥</span>
+            <span class="card-desc" id="desc-QH">+3</span>
+        </div>
+        <div class="btn-card" onclick="addCard('K', 4)">
+            <span class="card-count" id="count-K">0</span>
+            <span class="card-val">K</span>
+            <span class="card-desc">+4</span>
+        </div>
+        <div class="btn-card" onclick="addCard('A', 11)">
+            <span class="card-count" id="count-A">0</span>
+            <span class="card-val">A</span>
+            <span class="card-desc">+11</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-ctrl btn-reset" onclick="resetCalc()">Сброс</button>
+        <button class="btn-ctrl btn-done" onclick="window.close()">Готово</button>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // State: array of card values added
+        let cards = [];
+
+        function addCard(type, baseValue) {
+            cards.push({ type, baseValue });
+            recalculate();
+            
+            // Visual bump effect on total
+            const totalEl = document.getElementById('totalDisplay');
+            totalEl.classList.add('bump');
+            setTimeout(() => totalEl.classList.remove('bump'), 100);
+        }
+
+        function removeLast() {
+            if(cards.length > 0) {
+                cards.pop();
+                recalculate();
+            }
+        }
+
+        function resetCalc() {
+            if(cards.length === 0) return;
+            cards = [];
+            recalculate();
+        }
+
+        function recalculate() {
+            // Count specific cards
+            const counts = {};
+            cards.forEach(c => {
+                counts[c.type] = (counts[c.type] || 0) + 1;
+            });
+
+            let total = 0;
+            const qCount = counts['Q'] || 0;
+            const qhCount = counts['QH'] || 0;
+
+            // Calculate total with solo rules
+            cards.forEach(c => {
+                let val = c.baseValue;
+                
+                // Q Solo Rule: +20 if only one Q exists
+                if (c.type === 'Q' && qCount === 1) val = 20;
+                
+                // QH Solo Rule: +40 if only one QH exists
+                if (c.type === 'QH' && qhCount === 1) val = 40;
+                
+                total += val;
+            });
+
+            // Update UI
+            document.getElementById('totalDisplay').innerText = total;
+
+            // Update counters and descriptions
+            updateCounter('6', counts['6']);
+            updateCounter('7', counts['7']);
+            updateCounter('8', counts['8']);
+            updateCounter('10', counts['10']);
+            updateCounter('J', counts['J']);
+            updateCounter('K', counts['K']);
+            updateCounter('A', counts['A']);
+            
+            // Special handling for Queens to show solo bonus status
+            updateQueenUI('Q', qCount, 20, 'btn-q', 'desc-Q');
+            updateQueenUI('QH', qhCount, 40, 'btn-qh', 'desc-QH');
+        }
+
+        function updateCounter(type, count) {
+            const el = document.getElementById(`count-${type}`);
+            el.innerText = count || '';
+            el.classList.toggle('visible', count > 0);
+        }
+
+        function updateQueenUI(type, count, soloVal, btnId, descId) {
+            const el = document.getElementById(`count-${type}`);
+            const btn = document.getElementById(btnId);
+            const desc = document.getElementById(descId);
+            
+            el.innerText = count || '';
+            el.classList.toggle('visible', count > 0);
+            
+            // Highlight if solo bonus is active
+            if (count === 1) {
+                btn.classList.add('solo');
+                desc.innerText = `+${soloVal} (Solo)`;
+            } else if (count > 1) {
+                btn.classList.remove('solo');
+                desc.innerText = `+3 each`;
+            } else {
+                btn.classList.remove('solo');
+                desc.innerText = '+3';
+            }
+        }
+
+        // Initialize
+        recalculate();
+    </script>
+</body>
+</html>
