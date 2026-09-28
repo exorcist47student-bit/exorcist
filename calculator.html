@@ -25,13 +25,11 @@
             display: flex; flex-direction: column; transition: background 0.3s;
         }
 
-        /* Header & Total */
         .header { text-align: center; margin-bottom: 30px; }
         .total-label { font-size: 14px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
         .total-value { font-size: 72px; font-weight: 800; line-height: 1; transition: transform 0.1s; }
         .total-value.bump { transform: scale(1.1); }
 
-        /* Grid Layout */
         .grid { 
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; 
             flex: 1; align-content: start; max-width: 500px; margin: 0 auto; width: 100%;
@@ -59,7 +57,6 @@
         .btn-qh.solo .card-count { color: var(--heart); opacity: 1; }
         .btn-qh .card-val { color: var(--heart); }
 
-        /* Footer Controls */
         .controls { 
             display: flex; gap: 12px; margin-top: auto; padding-top: 20px; 
             max-width: 500px; width: 100%; margin-left: auto; margin-right: auto;
@@ -71,15 +68,6 @@
         }
         .btn-reset { background: var(--card); color: var(--danger); border: 1px solid var(--border); }
         .btn-done { background: var(--accent); color: white; }
-
-        /* Toast for Solo Bonus Info */
-        .toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: var(--card); color: var(--text); padding: 10px 20px;
-            border-radius: 20px; font-size: 14px; border: 1px solid var(--border);
-            opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
-        }
-        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
@@ -147,10 +135,8 @@
         <button class="btn-ctrl btn-done" onclick="window.close()">Готово</button>
     </div>
 
-    <div id="toast" class="toast"></div>
-
     <script>
-        // State: array of card values added
+        // State: array of card objects
         let cards = [];
 
         function addCard(type, baseValue) {
@@ -163,13 +149,6 @@
             setTimeout(() => totalEl.classList.remove('bump'), 100);
         }
 
-        function removeLast() {
-            if(cards.length > 0) {
-                cards.pop();
-                recalculate();
-            }
-        }
-
         function resetCalc() {
             if(cards.length === 0) return;
             cards = [];
@@ -177,25 +156,23 @@
         }
 
         function recalculate() {
-            // Count specific cards
+            // FIXED LOGIC: Solo bonus applies ONLY if total cards == 1
+            const isSoloHand = cards.length === 1;
+            
+            let total = 0;
             const counts = {};
+
+            // First pass: count everything and calculate base total
             cards.forEach(c => {
                 counts[c.type] = (counts[c.type] || 0) + 1;
-            });
-
-            let total = 0;
-            const qCount = counts['Q'] || 0;
-            const qhCount = counts['QH'] || 0;
-
-            // Calculate total with solo rules
-            cards.forEach(c => {
+                
                 let val = c.baseValue;
                 
-                // Q Solo Rule: +20 if only one Q exists
-                if (c.type === 'Q' && qCount === 1) val = 20;
-                
-                // QH Solo Rule: +40 if only one QH exists
-                if (c.type === 'QH' && qhCount === 1) val = 40;
+                // Apply Solo Bonus only if hand has exactly 1 card
+                if (isSoloHand) {
+                    if (c.type === 'Q') val = 20;
+                    if (c.type === 'QH') val = 40;
+                }
                 
                 total += val;
             });
@@ -203,18 +180,12 @@
             // Update UI
             document.getElementById('totalDisplay').innerText = total;
 
-            // Update counters and descriptions
-            updateCounter('6', counts['6']);
-            updateCounter('7', counts['7']);
-            updateCounter('8', counts['8']);
-            updateCounter('10', counts['10']);
-            updateCounter('J', counts['J']);
-            updateCounter('K', counts['K']);
-            updateCounter('A', counts['A']);
+            // Update counters
+            ['6','7','8','10','J','K','A'].forEach(t => updateCounter(t, counts[t]));
             
-            // Special handling for Queens to show solo bonus status
-            updateQueenUI('Q', qCount, 20, 'btn-q', 'desc-Q');
-            updateQueenUI('QH', qhCount, 40, 'btn-qh', 'desc-QH');
+            // Special handling for Queens to show solo status
+            updateQueenUI('Q', counts['Q'], isSoloHand, 'btn-q', 'desc-Q');
+            updateQueenUI('QH', counts['QH'], isSoloHand, 'btn-qh', 'desc-QH');
         }
 
         function updateCounter(type, count) {
@@ -223,7 +194,7 @@
             el.classList.toggle('visible', count > 0);
         }
 
-        function updateQueenUI(type, count, soloVal, btnId, descId) {
+        function updateQueenUI(type, count, isSoloHand, btnId, descId) {
             const el = document.getElementById(`count-${type}`);
             const btn = document.getElementById(btnId);
             const desc = document.getElementById(descId);
@@ -231,13 +202,12 @@
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
             
-            // Highlight if solo bonus is active
-            if (count === 1) {
+            // Highlight only if this queen type exists AND hand is solo
+            const hasThisQueen = count > 0;
+            if (hasThisQueen && isSoloHand) {
                 btn.classList.add('solo');
-                desc.innerText = `+${soloVal} (Solo)`;
-            } else if (count > 1) {
-                btn.classList.remove('solo');
-                desc.innerText = `+3 each`;
+                const bonus = type === 'Q' ? 20 : 40;
+                desc.innerText = `+${bonus} (Solo)`;
             } else {
                 btn.classList.remove('solo');
                 desc.innerText = '+3';
