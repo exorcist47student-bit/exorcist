@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game v11.1</title>
+    <title>101 Game v11.3</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
@@ -118,17 +118,42 @@
         .btn-reset { flex: 0.6; background: var(--card); color: var(--danger); padding: 16px; border-radius: 14px; border: 1px solid var(--border); }
         .btn-stats { flex: 0.6; background: var(--card); color: var(--text); padding: 16px; border-radius: 14px; border: 1px solid var(--border); font-size: 20px; }
 
+        /* FIXED STATS SHEET & OVERLAY */
+        .stats-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 140;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .stats-overlay.visible { opacity: 1; pointer-events: auto; }
+
         .stats-sheet {
-            position: fixed; bottom: 0; left: 0; right: 0; top: 30%;
+            position: fixed; bottom: 0; left: 0; right: 0; top: 35%;
             background: var(--modal-bg); backdrop-filter: blur(25px);
             border-radius: 24px 24px 0 0; transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
             z-index: 150; display: flex; flex-direction: column;
             border-top: 1px solid var(--border); border-bottom: none;
+            will-change: transform;
         }
         .stats-sheet.open { transform: translateY(0); }
-        .sheet-handle { width: 40px; height: 5px; background: var(--sub); border-radius: 3px; margin: 12px auto; opacity: 0.5; }
-        .sheet-tabs { display: flex; padding: 0 20px; gap: 10px; margin-bottom: 15px; }
+        
+        .sheet-handle-area { 
+            width: 100%; height: 30px; display: flex; align-items: center; 
+            justify-content: center; cursor: grab; touch-action: none; 
+        }
+        .sheet-handle { width: 40px; height: 5px; background: var(--sub); border-radius: 3px; opacity: 0.5; }
+        
+        .close-stats { 
+            position: absolute; top: 10px; right: 10px; 
+            width: 44px; height: 44px; border-radius: 50%; 
+            background: var(--card); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; 
+            color: var(--sub); font-size: 20px; z-index: 160;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .close-stats:active { background: var(--border); }
+
+        .sheet-tabs { display: flex; padding: 0 20px; gap: 10px; margin-bottom: 15px; margin-top: 10px;}
         .tab { 
             flex: 1; padding: 10px; text-align: center; border-radius: 10px; 
             background: var(--card); color: var(--sub); font-size: 14px; font-weight: 600; cursor: pointer;
@@ -154,11 +179,6 @@
         .rank.top-1 { color: #ffd700; } .rank.top-2 { color: #c0c0c0; } .rank.top-3 { color: #cd7f32; }
         .s-name { flex: 1; font-weight: 500; padding-left: 10px; }
         .s-val { font-weight: 700; font-size: 18px; }
-        .close-stats { 
-            position: absolute; top: 15px; right: 20px; background: var(--card); 
-            width: 30px; height: 30px; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; color: var(--sub); font-size: 18px;
-        }
     </style>
 </head>
 <body>
@@ -199,10 +219,16 @@
         <button class="btn-round" onclick="endRound()">Завершить раунд</button>
     </div>
 
+    <!-- Overlay for tapping outside -->
+    <div id="statsOverlay" class="stats-overlay" onclick="closeStats()"></div>
+
     <!-- Stats Sheet -->
     <div id="statsSheet" class="stats-sheet">
-        <div class="sheet-handle"></div>
-        <div class="close-stats" onclick="closeStats()"></div>
+        <div class="sheet-handle-area" id="swipeArea">
+            <div class="sheet-handle"></div>
+        </div>
+        <div class="close-stats" onclick="closeStats()">✕</div>
+        
         <div class="sheet-tabs">
             <div class="tab active" onclick="switchTab('points')">Очки</div>
             <div class="tab" onclick="switchTab('wins')">Победы</div>
@@ -213,7 +239,6 @@
 
     <script>
         // --- State & Storage Migration ---
-        // Migrate from v10 to v11 if needed
         if (!localStorage.getItem('101_hist_v11') && localStorage.getItem('101_hist_v10')) {
             localStorage.setItem('101_hist_v11', localStorage.getItem('101_hist_v10'));
         }
@@ -257,14 +282,13 @@
             addPlayer(inp.value.trim());
         }
 
-        // --- FIXED Autocomplete Logic ---
+        // --- Autocomplete Logic ---
         const nameInput = document.getElementById('nameInput');
         const acList = document.getElementById('autocompleteList');
 
         nameInput.addEventListener('input', (e) => {
             const val = e.target.value.trim().toLowerCase();
             
-            // Collect all unique names from history safely
             const allNames = new Set();
             if (history && typeof history === 'object') {
                 Object.values(history).forEach(dayData => {
@@ -273,15 +297,11 @@
                     }
                 });
             }
-            
-            // Also add currently playing players to suggestions (in case they were added manually)
             players.forEach(p => allNames.add(p.name));
 
             if (!val) { hideAutocomplete(); return; }
 
             const matches = Array.from(allNames).filter(n => n.toLowerCase().includes(val));
-            
-            // Sort: exact start match first
             matches.sort((a, b) => {
                 const aStarts = a.toLowerCase().startsWith(val);
                 const bStarts = b.toLowerCase().startsWith(val);
@@ -309,7 +329,6 @@
             if (e.key === 'Enter') addPlayerFromInput();
         });
 
-        // Hide when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.setup-area')) hideAutocomplete();
         });
@@ -366,8 +385,8 @@
             save();
         }
 
-                function endRound() {
-            // 1. ПРОВЕРКА НА 101 (Исправление бага)
+        function endRound() {
+            // CHECK FOR EXACT 101 FIRST
             let bustPlayer = players.find(p => p.score === 101);
             
             if (bustPlayer) {
@@ -376,10 +395,10 @@
                 gameCount++;
                 roundCount = 1;
                 save();
-                return; // Прерываем функцию, победы в этом раунде нет
+                return; 
             }
 
-            // 2. ОПРЕДЕЛЕНИЕ ПОБЕДИТЕЛЯ (Минимальный счет > 0)
+            // DETERMINE WINNER
             let minScore = Infinity;
             let winners = [];
             
@@ -392,7 +411,6 @@
                 }
             });
 
-            // 3. НАЧИСЛЕНИЕ ПОБЕДЫ И ПЕРЕХОД К СЛЕДУЮЩЕМУ РАУНДУ
             if (winners.length > 0) {
                 winners.forEach(w => trackWin(w));
                 showToast(`✅ Раунд завершен. Победитель: ${winners.join(', ')}`, false);
@@ -433,15 +451,63 @@
             history[date][name].wins += 1;
         }
 
+        // --- FIXED STATS SHEET LOGIC ---
+        const statsSheet = document.getElementById('statsSheet');
+        const swipeArea = document.getElementById('swipeArea');
+        const statsOverlay = document.getElementById('statsOverlay');
+        let startY = 0, currentY = 0, isDragging = false;
+
         function openStats() {
             renderDates();
             renderStatsList();
-            document.getElementById('statsSheet').classList.add('open');
+            statsSheet.classList.add('open');
+            statsOverlay.classList.add('visible');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeStats() {
-            document.getElementById('statsSheet').classList.remove('open');
+            statsSheet.classList.remove('open');
+            statsOverlay.classList.remove('visible');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                statsSheet.style.transform = '';
+            }, 300);
         }
+
+        // Swipe Logic
+        swipeArea.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            statsSheet.style.transition = 'none';
+        }, { passive: true });
+
+        swipeArea.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+            
+            if (diff > 0) {
+                statsSheet.style.transform = `translateY(${diff}px)`;
+                const opacity = Math.max(0, 0.5 - (diff / window.innerHeight));
+                statsOverlay.style.opacity = opacity;
+            }
+        }, { passive: true });
+
+        swipeArea.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            const diff = currentY - startY;
+            
+            statsSheet.style.transition = '';
+            
+            if (diff > 80) {
+                closeStats();
+            } else {
+                statsSheet.style.transform = '';
+                statsOverlay.style.opacity = '';
+            }
+            startY = 0; currentY = 0;
+        });
 
         function switchTab(tab) {
             currentStatTab = tab;
