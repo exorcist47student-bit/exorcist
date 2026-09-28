@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game</title>
+    <title>101 Game Final</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
@@ -12,7 +12,7 @@
         body { 
             background: var(--bg); color: var(--text); 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            padding: 20px; margin: 0; padding-bottom: 80px; 
+            padding: 20px; margin: 0; padding-bottom: 100px; /* Отступ для нижней панели */
         }
         
         /* Header Stats */
@@ -78,7 +78,7 @@
         .btn-cancel { background: #3a3a3c; color: white; }
         .btn-ok { background: var(--accent); color: white; }
 
-        /* Toast & Reset */
+        /* Toast */
         .toast { 
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px); 
             background: var(--danger); color: white; padding: 14px 28px; border-radius: 30px; 
@@ -87,10 +87,20 @@
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        .reset-btn { 
-            position: fixed; bottom: 20px; right: 20px; 
-            background: #2c2c2e; color: var(--danger); border: 1px solid #3a3a3c;
-            padding: 12px 20px; border-radius: 30px; font-size: 14px; z-index: 50;
+        /* Bottom Control Panel */
+        .bottom-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: rgba(28,28,30,0.95); backdrop-filter: blur(15px); 
+            padding: 15px 20px 35px 20px; display: flex; gap: 12px; 
+            border-top: 1px solid #333; z-index: 50; 
+        }
+        .btn-round { 
+            flex: 2; background: var(--accent); color: white; 
+            padding: 16px; font-size: 17px; border-radius: 14px; 
+        }
+        .btn-reset { 
+            flex: 1; background: #2c2c2e; color: var(--danger); 
+            padding: 16px; border-radius: 14px; border: 1px solid #3a3a3c; 
         }
     </style>
 </head>
@@ -128,19 +138,23 @@
 
     <div id="toast" class="toast">🔥 Перебор! Игра +1</div>
     
-    <button class="reset-btn" onclick="fullReset()">Сброс</button>
+    <!-- Bottom Controls -->
+    <div class="bottom-panel">
+        <button class="btn-reset" onclick="fullReset()">Сброс</button>
+        <button class="btn-round" onclick="endRound()">Завершить раунд</button>
+    </div>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_v6')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_game_v6')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_round_v6')) || 1;
+        let players = JSON.parse(localStorage.getItem('101_v7')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v7')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_round_v7')) || 1;
         let targetId = null;
         let isMinusMode = false;
 
         function save() {
-            localStorage.setItem('101_v6', JSON.stringify(players));
-            localStorage.setItem('101_game_v6', gameCount);
-            localStorage.setItem('101_round_v6', roundCount);
+            localStorage.setItem('101_v7', JSON.stringify(players));
+            localStorage.setItem('101_game_v7', gameCount);
+            localStorage.setItem('101_round_v7', roundCount);
             render();
         }
 
@@ -198,21 +212,26 @@
 
             p.score += val;
 
-            // Rule: >= 102 triggers Game Over
+            // Rule: >= 102 triggers Game Over for this player
             if (p.score >= 102) {
                 showToast(`💀 ${p.name} перебрал (${p.score})`);
                 p.score = 0;
                 gameCount++;
-                // Optional: increment round on bust? Usually yes in card games.
-                // roundCount++; 
             }
 
             closeModal();
             save();
         }
 
+        // NEW: Manual Round End
+        function endRound() {
+            if(!confirm("Раунд завершен? Переходим к следующему.")) return;
+            roundCount++;
+            save();
+        }
+
         function fullReset() {
-            if(!confirm("Сбросить всю игру?")) return;
+            if(!confirm("Сбросить всю игру полностью?")) return;
             players.forEach(p => p.score = 0);
             gameCount = 1;
             roundCount = 1;
