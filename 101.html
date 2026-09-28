@@ -3,49 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Pro: Fixed Minus</title>
+    <title>101 Simple</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
             --accent: #0a84ff; --danger: #ff453a; --success: #30d158; --warn: #ffd60a;
         }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; margin: 0; padding-bottom: 90px; }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; margin: 0; padding-bottom: 80px; 
+        }
         
-        .stats-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; }
-        .stat-box { background: var(--card); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; text-align: center; min-width: 80px;}
-        .stat-label { color: var(--sub); font-size: 10px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .game-badge { background: var(--card); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; border: 1px solid #333; }
         
-        .player-card { background: var(--card); padding: 16px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        /* Setup */
+        .setup-area { display: flex; gap: 10px; margin-bottom: 25px; }
+        input[type="text"] { 
+            flex: 1; background: var(--card); border: none; padding: 14px; 
+            border-radius: 12px; color: white; font-size: 16px; outline: none; 
+        }
+        .btn-add { background: var(--accent); color: white; padding: 0 24px; border-radius: 12px; font-size: 20px; border:none; }
+
+        /* Player Card */
+        .player-card { 
+            background: var(--card); padding: 16px; border-radius: 16px; 
+            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
+        }
         .p-info { flex: 1; }
         .p-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-        .p-scores { display: flex; gap: 12px; font-size: 14px; align-items: baseline; }
-        .score-cur { color: var(--accent); font-weight: bold; font-size: 20px; }
-        .score-bank { color: var(--sub); }
-        .score-rem { color: var(--warn); opacity: 0.9; font-weight: 500;}
-
+        .p-stats { display: flex; gap: 12px; align-items: baseline; }
+        .score-val { color: var(--accent); font-weight: 800; font-size: 22px; }
+        .score-rem { color: var(--sub); font-size: 15px; font-weight: 500; }
+        
+        /* Buttons */
         button { border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.1s; -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.92); opacity: 0.8; }
-        .btn-action { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-left: 8px; border-radius: 50%; }
+        
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .btn-action { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 50%; }
         .btn-plus { background: var(--success); color: black; }
         .btn-minus { background: var(--warn); color: black; }
-        .btn-del { background: transparent; color: var(--danger); font-size: 28px; width: 40px; }
-
-        .setup-area { display: flex; gap: 10px; margin-bottom: 25px; }
-        input[type="text"] { flex: 1; background: var(--card); border: none; padding: 14px; border-radius: 12px; color: white; font-size: 16px; outline: none; }
-        
-        .bottom-controls { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(28,28,30,0.95); backdrop-filter: blur(15px); padding: 15px 20px 30px 20px; display: flex; gap: 12px; border-top: 1px solid #333; z-index: 50; }
-        .btn-round { flex: 2; background: var(--accent); color: white; padding: 16px; font-size: 17px; border-radius: 14px; }
-        .btn-reset { flex: 1; background: #2c2c2e; color: var(--danger); padding: 16px; border-radius: 14px; border: 1px solid #3a3a3c; }
+        .btn-del { background: transparent; color: var(--danger); font-size: 26px; width: 40px; }
 
         /* Modal */
-        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px); }
-        .modal { background: #2c2c2e; padding: 30px 25px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-overlay { 
+            position: fixed; top:0; left:0; right:0; bottom:0; 
+            background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; 
+            z-index: 100; backdrop-filter: blur(8px); 
+        }
+        .modal { 
+            background: #2c2c2e; padding: 30px 25px; border-radius: 24px; 
+            width: 85%; max-width: 340px; text-align: center; 
+        }
         .modal h3 { margin: 0 0 15px 0; color: var(--sub); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Fix for iOS number input */
-        .modal input[type="number"] { 
-            width: 100%; margin: 10px 0 20px 0; text-align: center; 
-            font-size: 42px; font-weight: bold; background: #1c1c1e; 
+        .modal input { 
+            width: 100%; margin: 10px 0 25px 0; text-align: center; 
+            font-size: 48px; font-weight: bold; background: #1c1c1e; 
             border: 1px solid #48484a; border-radius: 16px; padding: 15px 0;
             color: white; outline: none; -moz-appearance: textfield;
         }
@@ -56,35 +73,41 @@
         .btn-cancel { background: #3a3a3c; color: white; }
         .btn-ok { background: var(--accent); color: white; }
 
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--danger); color: white; padding: 14px 28px; border-radius: 30px; font-weight: 700; box-shadow: 0 5px 15px rgba(255,69,58,0.4); opacity: 0; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; z-index: 200; white-space: nowrap; font-size: 15px; }
+        /* Toast & Reset */
+        .toast { 
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px); 
+            background: var(--danger); color: white; padding: 14px 28px; border-radius: 30px; 
+            font-weight: 700; box-shadow: 0 5px 15px rgba(255,69,58,0.4); 
+            opacity: 0; transition: 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; 
+        }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .reset-btn { 
+            position: fixed; bottom: 20px; right: 20px; 
+            background: #2c2c2e; color: var(--danger); border: 1px solid #3a3a3c;
+            padding: 12px 20px; border-radius: 30px; font-size: 14px; z-index: 50;
+        }
     </style>
 </head>
 <body>
 
-    <div class="stats-bar">
-        <div class="stat-box">
-            <span class="stat-label">Игра</span>
-            <span id="gameNum">1</span>
-        </div>
-        <div class="stat-box" style="background: transparent; border: 1px solid #333;">
-            <span class="stat-label">Раунд</span>
-            <span id="roundNum">1</span>
-        </div>
+    <div class="header">
+        <div style="font-size: 24px; font-weight: 800;">🃏 101</div>
+        <div class="game-badge">Игра <span id="gameNum">1</span></div>
     </div>
 
     <div class="setup-area">
         <input type="text" id="nameInput" placeholder="Имя игрока..." onkeypress="if(event.key==='Enter') addPlayer()">
-        <button onclick="addPlayer()" style="background:var(--accent); color:white; padding:0 24px; font-size:20px;">+</button>
+        <button class="btn-add" onclick="addPlayer()">+</button>
     </div>
 
     <div id="gameArea"></div>
 
-    <!-- Modal -->
+    <!-- Modal for Input -->
     <div id="scoreModal" class="modal-overlay">
         <div class="modal">
             <h3 id="modalTitle">Очки</h3>
-            <!-- CHANGED: inputmode="decimal" forces keypad with minus sign on iOS -->
+            <!-- inputmode="decimal" ensures minus sign appears on iOS keypad -->
             <input type="number" id="scoreInput" inputmode="decimal">
             <div class="modal-btns">
                 <button class="btn-cancel" onclick="closeModal()">Отмена</button>
@@ -94,23 +117,18 @@
     </div>
 
     <div id="toast" class="toast">🔥 Перебор! Игра +1</div>
-
-    <div class="bottom-controls">
-        <button class="btn-reset" onclick="fullReset()">Сброс</button>
-        <button class="btn-round" onclick="endRound()">Завершить раунд</button>
-    </div>
+    
+    <button class="reset-btn" onclick="fullReset()">Сброс игры</button>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_pro_v4')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_pro_game_v4')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_pro_round_v4')) || 1;
+        let players = JSON.parse(localStorage.getItem('101_simple_v5')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v5')) || 1;
         let targetId = null;
-        let isMinusMode = false; // Flag to track if we are in penalty mode
+        let isMinusMode = false; // Flag to track penalty mode
 
         function save() {
-            localStorage.setItem('101_pro_v4', JSON.stringify(players));
-            localStorage.setItem('101_pro_game_v4', gameCount);
-            localStorage.setItem('101_pro_round_v4', roundCount);
+            localStorage.setItem('101_simple_v5', JSON.stringify(players));
+            localStorage.setItem('101_game_v5', gameCount);
             render();
         }
 
@@ -118,7 +136,7 @@
             const inp = document.getElementById('nameInput');
             const name = inp.value.trim();
             if(name) {
-                players.push({id: Date.now(), name: name, bank: 0, current: 0});
+                players.push({id: Date.now(), name: name, score: 0});
                 inp.value = '';
                 save();
             }
@@ -126,7 +144,7 @@
 
         function openModal(id, isMinus) {
             targetId = id;
-            isMinusMode = isMinus; // Save mode state
+            isMinusMode = isMinus; 
             
             const p = players.find(x => x.id === id);
             const title = document.getElementById('modalTitle');
@@ -135,17 +153,13 @@
             title.innerText = `${p.name} — ${isMinus ? 'ШТРАФ' : 'ОЧКИ'}`;
             title.style.color = isMinus ? 'var(--warn)' : 'var(--sub)';
             
-            // Clear input first
             input.value = '';
-            
             document.getElementById('scoreModal').style.display = 'flex';
             
-            // Focus and set value AFTER modal is visible to ensure iOS picks it up
+            // Focus and set initial value after modal renders
             setTimeout(() => {
                 input.focus();
-                if (isMinus) {
-                    input.value = '-';
-                }
+                if (isMinus) input.value = '-';
             }, 100);
         }
 
@@ -163,8 +177,8 @@
             let val = parseInt(valStr);
             if(isNaN(val)) { closeModal(); return; }
 
-            // LOGIC FIX: If we opened modal via MINUS button, force value to be negative
-            // even if user forgot to type the sign or iOS ate it.
+            // SAFETY FIX: If opened via Minus button, force negative value
+            // This handles cases where iOS keypad didn't show minus or user forgot it
             if (isMinusMode && val > 0) {
                 val = -val;
             }
@@ -172,44 +186,28 @@
             const p = players.find(x => x.id === targetId);
             if(!p) return;
 
-            p.current += val;
+            p.score += val;
 
             // Rule: >= 102 triggers Game Over
-            if (p.current >= 102) {
-                showToast(` ${p.name} перебрал (${p.current})`);
-                p.current = 0;
+            if (p.score >= 102) {
+                showToast(`💀 ${p.name} перебрал (${p.score})`);
+                p.score = 0;
                 gameCount++;
-            } else if (p.current < 0) {
-                // Optional: prevent score from going below 0? 
-                // Usually in 101 you can go negative, so we leave it.
             }
 
             closeModal();
             save();
         }
 
-        function endRound() {
-            if(players.length === 0) return;
-            if(!confirm("Записать очки в банк и начать новый раунд?")) return;
-            
-            players.forEach(p => {
-                p.bank += p.current;
-                p.current = 0;
-            });
-            roundCount++;
-            save();
-        }
-
         function fullReset() {
-            if(!confirm("ПОЛНЫЙ СБРОС? Все очки и статистика будут удалены.")) return;
-            players.forEach(p => { p.bank = 0; p.current = 0; });
+            if(!confirm("Сбросить всю игру?")) return;
+            players.forEach(p => p.score = 0);
             gameCount = 1;
-            roundCount = 1;
             save();
         }
 
         function removePlayer(id) {
-            if(confirm("Удалить этого игрока?")) {
+            if(confirm("Удалить игрока?")) {
                 players = players.filter(x => x.id !== id);
                 save();
             }
@@ -224,35 +222,33 @@
 
         function render() {
             document.getElementById('gameNum').innerText = gameCount;
-            document.getElementById('roundNum').innerText = roundCount;
-            
             const area = document.getElementById('gameArea');
             area.innerHTML = '';
 
+            // Sort: Active players first, then by score desc
             players.sort((a,b) => {
-                if (a.current > 0 && b.current === 0) return -1;
-                if (a.current === 0 && b.current > 0) return 1;
-                return b.bank - a.bank;
+                if (a.score > 0 && b.score === 0) return -1;
+                if (a.score === 0 && b.score > 0) return 1;
+                return b.score - a.score;
             });
 
             players.forEach(p => {
-                const rem = p.current > 0 ? (101 - p.current) : '-';
-                let remColor = 'color:var(--warn)';
-                if (p.current === 0) remColor = 'color:#48484a';
-                else if (p.current > 90) remColor = 'color:var(--danger)';
-                else if (p.current > 70) remColor = 'color:#ff9f0a';
+                const rem = p.score > 0 ? (101 - p.score) : '-';
+                let remColor = 'color:var(--sub)';
+                if (p.score > 90) remColor = 'color:var(--danger)';
+                else if (p.score > 70) remColor = 'color:var(--warn)';
+                else if (p.score > 0) remColor = 'color:#636366';
 
                 area.innerHTML += `
                     <div class="player-card">
                         <div class="p-info">
                             <div class="p-name">${p.name}</div>
-                            <div class="p-scores">
-                                <span class="score-cur">${p.current}</span>
+                            <div class="p-stats">
+                                <span class="score-val">${p.score}</span>
                                 <span class="score-rem" style="${remColor}">(${rem})</span>
-                                <span class="score-bank">Банк: ${p.bank}</span>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center;">
+                        <div class="actions">
                             <button class="btn-action btn-minus" onclick="openModal(${p.id}, true)">−</button>
                             <button class="btn-action btn-plus" onclick="openModal(${p.id}, false)">+</button>
                             <button class="btn-action btn-del" onclick="removePlayer(${p.id})">×</button>
