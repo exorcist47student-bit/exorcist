@@ -366,7 +366,20 @@
             save();
         }
 
-        function endRound() {
+                function endRound() {
+            // 1. ПРОВЕРКА НА 101 (Исправление бага)
+            let bustPlayer = players.find(p => p.score === 101);
+            
+            if (bustPlayer) {
+                showToast(`🎯 ${bustPlayer.name} набрал 101! Сброс`, true);
+                players.forEach(pl => pl.score = 0);
+                gameCount++;
+                roundCount = 1;
+                save();
+                return; // Прерываем функцию, победы в этом раунде нет
+            }
+
+            // 2. ОПРЕДЕЛЕНИЕ ПОБЕДИТЕЛЯ (Минимальный счет > 0)
             let minScore = Infinity;
             let winners = [];
             
@@ -379,6 +392,7 @@
                 }
             });
 
+            // 3. НАЧИСЛЕНИЕ ПОБЕДЫ И ПЕРЕХОД К СЛЕДУЮЩЕМУ РАУНДУ
             if (winners.length > 0) {
                 winners.forEach(w => trackWin(w));
                 showToast(`✅ Раунд завершен. Победитель: ${winners.join(', ')}`, false);
