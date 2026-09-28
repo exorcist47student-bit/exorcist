@@ -42,6 +42,14 @@
             -webkit-tap-highlight-color: transparent;
         }
         .btn-card:active { transform: scale(0.95); background: var(--border); }
+        .btn-card.disabled { opacity: 0.4; pointer-events: none; }
+        .btn-card.shake { animation: shake 0.3s ease-in-out; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
         
         .card-val { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
         .card-desc { font-size: 12px; color: var(--sub); }
@@ -79,51 +87,51 @@
 
     <div class="grid">
         <!-- Row 1 -->
-        <div class="btn-card" onclick="addCard('6', 6)">
+        <div class="btn-card" data-type="6" onclick="addCard('6', 6)">
             <span class="card-count" id="count-6">0</span>
             <span class="card-val">6</span>
             <span class="card-desc">+6</span>
         </div>
-        <div class="btn-card" onclick="addCard('7', 7)">
+        <div class="btn-card" data-type="7" onclick="addCard('7', 7)">
             <span class="card-count" id="count-7">0</span>
             <span class="card-val">7</span>
             <span class="card-desc">+7</span>
         </div>
-        <div class="btn-card" onclick="addCard('8', 8)">
+        <div class="btn-card" data-type="8" onclick="addCard('8', 8)">
             <span class="card-count" id="count-8">0</span>
             <span class="card-val">8</span>
             <span class="card-desc">+8</span>
         </div>
 
         <!-- Row 2 -->
-        <div class="btn-card" onclick="addCard('10', 10)">
+        <div class="btn-card" data-type="10" onclick="addCard('10', 10)">
             <span class="card-count" id="count-10">0</span>
             <span class="card-val">10</span>
             <span class="card-desc">+10</span>
         </div>
-        <div class="btn-card" onclick="addCard('J', 2)">
+        <div class="btn-card" data-type="J" onclick="addCard('J', 2)">
             <span class="card-count" id="count-J">0</span>
             <span class="card-val">J</span>
             <span class="card-desc">+2</span>
         </div>
-        <div class="btn-card btn-q" id="btn-q" onclick="addCard('Q', 3)">
+        <div class="btn-card btn-q" id="btn-q" data-type="Q" onclick="addCard('Q', 3)">
             <span class="card-count" id="count-Q">0</span>
             <span class="card-val">Q</span>
             <span class="card-desc" id="desc-Q">+3</span>
         </div>
 
         <!-- Row 3 -->
-        <div class="btn-card btn-qh" id="btn-qh" onclick="addCard('QH', 3)">
+        <div class="btn-card btn-qh" id="btn-qh" data-type="QH" onclick="addCard('QH', 3)">
             <span class="card-count" id="count-QH">0</span>
             <span class="card-val">Q♥</span>
             <span class="card-desc" id="desc-QH">+3</span>
         </div>
-        <div class="btn-card" onclick="addCard('K', 4)">
+        <div class="btn-card" data-type="K" onclick="addCard('K', 4)">
             <span class="card-count" id="count-K">0</span>
             <span class="card-val">K</span>
             <span class="card-desc">+4</span>
         </div>
-        <div class="btn-card" onclick="addCard('A', 11)">
+        <div class="btn-card" data-type="A" onclick="addCard('A', 11)">
             <span class="card-count" id="count-A">0</span>
             <span class="card-val">A</span>
             <span class="card-desc">+11</span>
@@ -138,8 +146,21 @@
     <script>
         // State: array of card objects
         let cards = [];
+        const MAX_CARDS_PER_TYPE = 4;
 
         function addCard(type, baseValue) {
+            // Check limit
+            const currentCount = cards.filter(c => c.type === type).length;
+            if (currentCount >= MAX_CARDS_PER_TYPE) {
+                // Visual feedback for limit reached
+                const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
+                if (btn) {
+                    btn.classList.add('shake');
+                    setTimeout(() => btn.classList.remove('shake'), 300);
+                }
+                return;
+            }
+
             cards.push({ type, baseValue });
             recalculate();
             
@@ -153,6 +174,15 @@
             if(cards.length === 0) return;
             cards = [];
             recalculate();
+        }
+
+        // API for integration with main game
+        function getIntegratedResult() {
+            return {
+                total: parseInt(document.getElementById('totalDisplay').innerText),
+                cards: [...cards], // Return copy to prevent external mutation
+                timestamp: Date.now()
+            };
         }
 
         function recalculate() {
@@ -180,7 +210,7 @@
             // Update UI
             document.getElementById('totalDisplay').innerText = total;
 
-            // Update counters
+            // Update counters and button states
             ['6','7','8','10','J','K','A'].forEach(t => updateCounter(t, counts[t]));
             
             // Special handling for Queens to show solo status
@@ -190,8 +220,17 @@
 
         function updateCounter(type, count) {
             const el = document.getElementById(`count-${type}`);
+            const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
+            
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
+            
+            // Disable button if limit reached
+            if (count >= MAX_CARDS_PER_TYPE) {
+                btn.classList.add('disabled');
+            } else {
+                btn.classList.remove('disabled');
+            }
         }
 
         function updateQueenUI(type, count, isSoloHand, btnId, descId) {
@@ -211,6 +250,13 @@
             } else {
                 btn.classList.remove('solo');
                 desc.innerText = '+3';
+            }
+            
+            // Also handle disabled state for queens
+            if (count >= MAX_CARDS_PER_TYPE) {
+                btn.classList.add('disabled');
+            } else {
+                btn.classList.remove('disabled');
             }
         }
 
