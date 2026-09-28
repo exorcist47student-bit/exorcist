@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game Final</title>
+    <title>101 Game v9</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
@@ -15,16 +15,14 @@
             padding: 20px; margin: 0; padding-bottom: 100px;
         }
         
-        /* Header Stats */
         .stats-bar { display: flex; justify-content: space-between; margin-bottom: 25px; gap: 10px; }
         .stat-box { 
             flex: 1; background: var(--card); padding: 10px; border-radius: 16px; 
-            text-align: center; border: 1px solid #333; 
+            text-align: center; border: 1px solid #333; transition: transform 0.2s;
         }
         .stat-label { color: var(--sub); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
         .stat-val { font-size: 20px; font-weight: 700; }
         
-        /* Setup */
         .setup-area { display: flex; gap: 10px; margin-bottom: 25px; }
         input[type="text"] { 
             flex: 1; background: var(--card); border: none; padding: 14px; 
@@ -32,7 +30,6 @@
         }
         .btn-add { background: var(--accent); color: white; padding: 0 24px; border-radius: 12px; font-size: 20px; border:none; }
 
-        /* Player Card */
         .player-card { 
             background: var(--card); padding: 16px; border-radius: 16px; 
             margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
@@ -43,7 +40,6 @@
         .score-val { color: var(--accent); font-weight: 800; font-size: 22px; }
         .score-rem { color: var(--sub); font-size: 15px; font-weight: 500; }
         
-        /* Buttons */
         button { border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.1s; -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.92); opacity: 0.8; }
         
@@ -53,7 +49,6 @@
         .btn-minus { background: var(--warn); color: black; }
         .btn-del { background: transparent; color: var(--danger); font-size: 26px; width: 40px; }
 
-        /* Modal */
         .modal-overlay { 
             position: fixed; top:0; left:0; right:0; bottom:0; 
             background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; 
@@ -64,7 +59,6 @@
             width: 85%; max-width: 340px; text-align: center; 
         }
         .modal h3 { margin: 0 0 15px 0; color: var(--sub); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
-        
         .modal input { 
             width: 100%; margin: 10px 0 25px 0; text-align: center; 
             font-size: 48px; font-weight: bold; background: #1c1c1e; 
@@ -72,22 +66,22 @@
             color: white; outline: none; -moz-appearance: textfield;
         }
         .modal input::-webkit-outer-spin-button, .modal input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
         .modal-btns { display: flex; gap: 12px; justify-content: center; }
         .modal-btns button { flex: 1; padding: 16px; font-size: 17px; border-radius: 14px; }
         .btn-cancel { background: #3a3a3c; color: white; }
         .btn-ok { background: var(--accent); color: white; }
 
-        /* Toast */
+        /* Toast Notifications */
         .toast { 
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px); 
             background: var(--danger); color: white; padding: 14px 28px; border-radius: 30px; 
             font-weight: 700; box-shadow: 0 5px 15px rgba(255,69,58,0.4); 
-            opacity: 0; transition: 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; 
+            opacity: 0; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            pointer-events: none; z-index: 200; white-space: nowrap; 
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--success); color: black; box-shadow: 0 5px 15px rgba(48,209,88,0.4); }
 
-        /* Bottom Control Panel */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             background: rgba(28,28,30,0.95); backdrop-filter: blur(15px); 
@@ -107,11 +101,11 @@
 <body>
 
     <div class="stats-bar">
-        <div class="stat-box">
+        <div class="stat-box" id="gameBox">
             <span class="stat-label">Игра</span>
             <span class="stat-val" id="gameNum">1</span>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" id="roundBox">
             <span class="stat-label">Раунд</span>
             <span class="stat-val" id="roundNum">1</span>
         </div>
@@ -136,7 +130,7 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">🔥 Перебор! Новая игра</div>
+    <div id="toast" class="toast">Уведомление</div>
     
     <!-- Bottom Controls -->
     <div class="bottom-panel">
@@ -145,16 +139,17 @@
     </div>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_v8')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_game_v8')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_round_v8')) || 1;
+        // Using v9 keys to avoid stuck data from previous versions
+        let players = JSON.parse(localStorage.getItem('101_v9')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v9')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_round_v9')) || 1;
         let targetId = null;
         let isMinusMode = false;
 
         function save() {
-            localStorage.setItem('101_v8', JSON.stringify(players));
-            localStorage.setItem('101_game_v8', gameCount);
-            localStorage.setItem('101_round_v8', roundCount);
+            localStorage.setItem('101_v9', JSON.stringify(players));
+            localStorage.setItem('101_game_v9', gameCount);
+            localStorage.setItem('101_round_v9', roundCount);
             render();
         }
 
@@ -214,7 +209,7 @@
 
             // Rule: >= 102 triggers FULL RESET (New Game)
             if (p.score >= 102) {
-                showToast(`💀 ${p.name} перебрал (${p.score})`);
+                showToast(`💀 ${p.name} перебрал! Новая игра`, true);
                 
                 // Reset everyone's current score
                 players.forEach(pl => pl.score = 0);
@@ -228,10 +223,10 @@
             save();
         }
 
-        // Manual Round End
+        // Instant Round End with Toast Notification
         function endRound() {
-            if(!confirm("Раунд завершен? Переходим к следующему.")) return;
             roundCount++;
+            showToast(`✅ Раунд ${roundCount - 1} завершен`, false);
             save();
         }
 
@@ -250,11 +245,19 @@
             }
         }
 
-        function showToast(msg) {
+        function showToast(msg, isError) {
             const t = document.getElementById('toast');
             t.innerText = msg;
+            
+            // Toggle success/error style
+            if(isError) {
+                t.classList.remove('success');
+            } else {
+                t.classList.add('success');
+            }
+
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
+            setTimeout(() => t.classList.remove('show'), 2000);
         }
 
         function render() {
