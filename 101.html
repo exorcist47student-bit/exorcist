@@ -3,59 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game v10</title>
+    <title>101 Game v11</title>
     <style>
         :root {
-            /* Dark Theme (Default) */
-            --bg: #000000;
-            --card: #1c1c1e;
-            --text: #ffffff;
-            --sub: #8e8e93;
-            --accent: #0a84ff;
-            --danger: #ff453a;
-            --success: #30d158;
-            --warn: #ffd60a;
-            --border: #333333;
-            --modal-bg: rgba(28, 28, 30, 0.95);
+            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
+            --accent: #0a84ff; --danger: #ff453a; --success: #30d158; --warn: #ffd60a;
+            --border: #333333; --modal-bg: rgba(28, 28, 30, 0.95);
         }
-
-        /* Light Theme Override */
         @media (prefers-color-scheme: light) {
             :root {
-                --bg: #f2f2f7;
-                --card: #ffffff;
-                --text: #000000;
-                --sub: #636366;
-                --accent: #007aff;
-                --danger: #ff3b30;
-                --success: #34c759;
-                --warn: #ffcc00;
-                --border: #e5e5ea;
-                --modal-bg: rgba(255, 255, 255, 0.95);
+                --bg: #f2f2f7; --card: #ffffff; --text: #000000; --sub: #636366;
+                --accent: #007aff; --danger: #ff3b30; --success: #34c759; --warn: #ffcc00;
+                --border: #e5e5ea; --modal-bg: rgba(255, 255, 255, 0.95);
             }
         }
 
         body { 
             background: var(--bg); color: var(--text); 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; 
-            padding: 20px; margin: 0; padding-bottom: 100px;
-            transition: background 0.3s, color 0.3s;
+            padding: 20px; margin: 0; padding-bottom: 100px; transition: background 0.3s, color 0.3s;
         }
         
         .stats-bar { display: flex; justify-content: space-between; margin-bottom: 25px; gap: 10px; }
         .stat-box { 
             flex: 1; background: var(--card); padding: 10px; border-radius: 16px; 
-            text-align: center; border: 1px solid var(--border); transition: transform 0.2s;
+            text-align: center; border: 1px solid var(--border); 
         }
         .stat-label { color: var(--sub); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
         .stat-val { font-size: 20px; font-weight: 700; }
         
-        .setup-area { display: flex; gap: 10px; margin-bottom: 25px; }
+        /* Setup Area with Autocomplete */
+        .setup-area { position: relative; margin-bottom: 25px; }
+        .input-wrapper { display: flex; gap: 10px; }
         input[type="text"] { 
             flex: 1; background: var(--card); border: 1px solid var(--border); padding: 14px; 
-            border-radius: 12px; color: var(--text); font-size: 16px; outline: none; 
+            border-radius: 12px; color: var(--text); font-size: 16px; outline: none; width: 100%; box-sizing: border-box;
         }
         .btn-add { background: var(--accent); color: white; padding: 0 24px; border-radius: 12px; font-size: 20px; border:none; }
+        
+        /* Autocomplete Dropdown */
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 50px; /* Leave space for + button */
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            margin-top: 5px; z-index: 60; max-height: 200px; overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover, .autocomplete-item:active { background: var(--accent); color: white; }
+        .ac-name { font-weight: 500; }
+        .ac-meta { font-size: 12px; opacity: 0.7; }
 
         .player-card { 
             background: var(--card); padding: 16px; border-radius: 16px; 
@@ -99,7 +99,6 @@
         .btn-cancel { background: var(--border); color: var(--text); }
         .btn-ok { background: var(--accent); color: white; }
 
-        /* Toast Notifications */
         .toast { 
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px); 
             background: var(--danger); color: white; padding: 14px 28px; border-radius: 30px; 
@@ -110,7 +109,6 @@
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         .toast.success { background: var(--success); color: black; }
 
-        /* Bottom Panel */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             background: var(--modal-bg); backdrop-filter: blur(20px); 
@@ -121,7 +119,6 @@
         .btn-reset { flex: 0.6; background: var(--card); color: var(--danger); padding: 16px; border-radius: 14px; border: 1px solid var(--border); }
         .btn-stats { flex: 0.6; background: var(--card); color: var(--text); padding: 16px; border-radius: 14px; border: 1px solid var(--border); font-size: 20px; }
 
-        /* Stats Sheet */
         .stats-sheet {
             position: fixed; bottom: 0; left: 0; right: 0; top: 30%;
             background: var(--modal-bg); backdrop-filter: blur(25px);
@@ -131,7 +128,6 @@
             border-top: 1px solid var(--border); border-bottom: none;
         }
         .stats-sheet.open { transform: translateY(0); }
-        
         .sheet-handle { width: 40px; height: 5px; background: var(--sub); border-radius: 3px; margin: 12px auto; opacity: 0.5; }
         .sheet-tabs { display: flex; padding: 0 20px; gap: 10px; margin-bottom: 15px; }
         .tab { 
@@ -139,7 +135,6 @@
             background: var(--card); color: var(--sub); font-size: 14px; font-weight: 600; cursor: pointer;
         }
         .tab.active { background: var(--accent); color: white; }
-        
         .date-selector { 
             display: flex; overflow-x: auto; padding: 0 20px 15px 20px; gap: 8px; 
             scrollbar-width: none; -ms-overflow-style: none;
@@ -150,7 +145,6 @@
             color: var(--sub); font-size: 13px; white-space: nowrap; border: 1px solid var(--border);
         }
         .date-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
-        
         .stats-list { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
         .stat-row { 
             display: flex; justify-content: space-between; align-items: center; 
@@ -161,7 +155,6 @@
         .rank.top-1 { color: #ffd700; } .rank.top-2 { color: #c0c0c0; } .rank.top-3 { color: #cd7f32; }
         .s-name { flex: 1; font-weight: 500; padding-left: 10px; }
         .s-val { font-weight: 700; font-size: 18px; }
-
         .close-stats { 
             position: absolute; top: 15px; right: 20px; background: var(--card); 
             width: 30px; height: 30px; border-radius: 50%; display: flex; 
@@ -172,19 +165,17 @@
 <body>
 
     <div class="stats-bar">
-        <div class="stat-box">
-            <span class="stat-label">Игра</span>
-            <span class="stat-val" id="gameNum">1</span>
-        </div>
-        <div class="stat-box">
-            <span class="stat-label">Раунд</span>
-            <span class="stat-val" id="roundNum">1</span>
-        </div>
+        <div class="stat-box"><span class="stat-label">Игра</span><span class="stat-val" id="gameNum">1</span></div>
+        <div class="stat-box"><span class="stat-label">Раунд</span><span class="stat-val" id="roundNum">1</span></div>
     </div>
 
+    <!-- Setup with Autocomplete -->
     <div class="setup-area">
-        <input type="text" id="nameInput" placeholder="Имя игрока..." onkeypress="if(event.key==='Enter') addPlayer()">
-        <button class="btn-add" onclick="addPlayer()">+</button>
+        <div class="input-wrapper">
+            <input type="text" id="nameInput" placeholder="Имя игрока..." autocomplete="off">
+            <button class="btn-add" onclick="addPlayerFromInput()">+</button>
+        </div>
+        <div id="autocompleteList" class="autocomplete-list"></div>
     </div>
 
     <div id="gameArea"></div>
@@ -201,10 +192,8 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast">Уведомление</div>
     
-    <!-- Bottom Controls -->
     <div class="bottom-panel">
         <button class="btn-stats" onclick="openStats()">📊</button>
         <button class="btn-reset" onclick="fullReset()">Сброс</button>
@@ -214,50 +203,111 @@
     <!-- Stats Sheet -->
     <div id="statsSheet" class="stats-sheet">
         <div class="sheet-handle"></div>
-        <div class="close-stats" onclick="closeStats()">✕</div>
-        
+        <div class="close-stats" onclick="closeStats()"></div>
         <div class="sheet-tabs">
             <div class="tab active" onclick="switchTab('points')">Очки</div>
             <div class="tab" onclick="switchTab('wins')">Победы</div>
         </div>
-        
         <div class="date-selector" id="dateSelector"></div>
         <div class="stats-list" id="statsList"></div>
     </div>
 
     <script>
         // --- State & Storage ---
-        let players = JSON.parse(localStorage.getItem('101_v10')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_game_v10')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_round_v10')) || 1;
-        let history = JSON.parse(localStorage.getItem('101_hist_v10')) || {}; 
+        let players = JSON.parse(localStorage.getItem('101_v11')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v11')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_round_v11')) || 1;
+        let history = JSON.parse(localStorage.getItem('101_hist_v11')) || {}; 
         
-        // History structure: { "2024-09-28": { "Антон": { points: 150, wins: 2 }, "Оля": { points: 120, wins: 1 } } }
-
         let targetId = null;
         let isMinusMode = false;
         let currentStatTab = 'points';
         let selectedDate = new Date().toISOString().split('T')[0];
 
         function save() {
-            localStorage.setItem('101_v10', JSON.stringify(players));
-            localStorage.setItem('101_game_v10', gameCount);
-            localStorage.setItem('101_round_v10', roundCount);
-            localStorage.setItem('101_hist_v10', JSON.stringify(history));
+            localStorage.setItem('101_v11', JSON.stringify(players));
+            localStorage.setItem('101_game_v11', gameCount);
+            localStorage.setItem('101_round_v11', roundCount);
+            localStorage.setItem('101_hist_v11', JSON.stringify(history));
             render();
         }
 
         function getToday() { return new Date().toISOString().split('T')[0]; }
 
         // --- Core Game Logic ---
-        function addPlayer() {
-            const inp = document.getElementById('nameInput');
-            const name = inp.value.trim();
-            if(name) {
-                players.push({id: Date.now(), name: name, score: 0});
-                inp.value = '';
-                save();
+        function addPlayer(name) {
+            if(!name) return;
+            // Prevent duplicates in current session
+            if(players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                showToast(`⚠️ ${name} уже в игре`, true);
+                return;
             }
+            players.push({id: Date.now(), name: name, score: 0});
+            document.getElementById('nameInput').value = '';
+            hideAutocomplete();
+            save();
+        }
+
+        function addPlayerFromInput() {
+            const inp = document.getElementById('nameInput');
+            addPlayer(inp.value.trim());
+        }
+
+        // --- Autocomplete Logic ---
+        const nameInput = document.getElementById('nameInput');
+        const acList = document.getElementById('autocompleteList');
+
+        nameInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toLowerCase();
+            if (!val) { hideAutocomplete(); return; }
+
+            // Get all unique names from history
+            const allNames = new Set();
+            Object.values(history).forEach(dayData => {
+                Object.keys(dayData).forEach(name => allNames.add(name));
+            });
+            
+            // Filter and sort by frequency (simple proxy: just list them, or count occurrences)
+            // For simplicity, we'll just filter matches. If you want frequency sorting, we'd need to count.
+            // Let's do simple filtering first, but prioritize exact starts.
+            const matches = Array.from(allNames).filter(n => n.toLowerCase().includes(val));
+            
+            // Sort: startsWith first, then includes
+            matches.sort((a, b) => {
+                const aStarts = a.toLowerCase().startsWith(val);
+                const bStarts = b.toLowerCase().startsWith(val);
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return 0;
+            });
+
+            if (matches.length > 0) {
+                acList.innerHTML = '';
+                matches.forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<span class="ac-name">${name}</span>`;
+                    div.onclick = () => addPlayer(name);
+                    acList.appendChild(div);
+                });
+                acList.style.display = 'block';
+            } else {
+                hideAutocomplete();
+            }
+        });
+
+        // Handle Enter key in input
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addPlayerFromInput();
+        });
+
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.setup-area')) hideAutocomplete();
+        });
+
+        function hideAutocomplete() {
+            acList.style.display = 'none';
         }
 
         function openModal(id, isMinus) {
@@ -295,9 +345,7 @@
             if(!p) return;
 
             p.score += val;
-
-            // Track points for stats immediately
-            trackPoints(p.name, Math.abs(val)); // We track absolute value added to score
+            trackPoints(p.name, Math.abs(val));
 
             if (p.score >= 102) {
                 showToast(`💀 ${p.name} перебрал! Новая игра`, true);
@@ -311,7 +359,6 @@
         }
 
         function endRound() {
-            // Determine Winner (Lowest Score > 0)
             let minScore = Infinity;
             let winners = [];
             
@@ -385,12 +432,11 @@
             const container = document.getElementById('dateSelector');
             container.innerHTML = '';
             const dates = Object.keys(history).sort().reverse();
-            if(dates.length === 0) dates.push(getToday()); // Ensure today exists
+            if(dates.length === 0) dates.push(getToday()); 
             
             dates.forEach(d => {
                 const chip = document.createElement('div');
                 chip.className = `date-chip ${d === selectedDate ? 'active' : ''}`;
-                // Format DD.MM
                 const parts = d.split('-');
                 chip.innerText = `${parts[2]}.${parts[1]}`;
                 chip.onclick = () => { selectedDate = d; renderDates(); renderStatsList(); };
