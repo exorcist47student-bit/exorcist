@@ -42,7 +42,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         .btn-card:active { transform: scale(0.95); background: var(--border); }
-        .btn-card.disabled { opacity: 0.4; pointer-events: none; }
+        .btn-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(0.8); }
         .btn-card.shake { animation: shake 0.3s ease-in-out; }
         
         @keyframes shake {
@@ -144,30 +144,39 @@
     </div>
 
     <script>
-        // State: array of card objects
         let cards = [];
         const MAX_CARDS_PER_TYPE = 4;
 
         function addCard(type, baseValue) {
-            // Check limit
+            // 1. Проверка лимита конкретного типа
             const currentCount = cards.filter(c => c.type === type).length;
             if (currentCount >= MAX_CARDS_PER_TYPE) {
-                // Visual feedback for limit reached
-                const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
-                if (btn) {
-                    btn.classList.add('shake');
-                    setTimeout(() => btn.classList.remove('shake'), 300);
+                triggerShake(type); return;
+            }
+
+            // 2. ПРОВЕРКА ОБЩЕГО ЛИМИТА ДЛЯ ДАМ (Q + QH <= 4)
+            if (type === 'Q' || type === 'QH') {
+                const qCount = cards.filter(c => c.type === 'Q').length;
+                const qhCount = cards.filter(c => c.type === 'QH').length;
+                if ((qCount + qhCount) >= MAX_CARDS_PER_TYPE) {
+                    triggerShake(type); return;
                 }
-                return;
             }
 
             cards.push({ type, baseValue });
             recalculate();
             
-            // Visual bump effect on total
             const totalEl = document.getElementById('totalDisplay');
             totalEl.classList.add('bump');
             setTimeout(() => totalEl.classList.remove('bump'), 100);
+        }
+
+        function triggerShake(type) {
+            const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
+            if (btn) {
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 300);
+            }
         }
 
         function resetCalc() {
@@ -176,64 +185,52 @@
             recalculate();
         }
 
-        // API for integration with main game
         function getIntegratedResult() {
             return {
                 total: parseInt(document.getElementById('totalDisplay').innerText),
-                cards: [...cards], // Return copy to prevent external mutation
+                cards: [...cards],
                 timestamp: Date.now()
             };
         }
 
         function recalculate() {
-            // FIXED LOGIC: Solo bonus applies ONLY if total cards == 1
             const isSoloHand = cards.length === 1;
-            
             let total = 0;
             const counts = {};
 
-            // First pass: count everything and calculate base total
             cards.forEach(c => {
                 counts[c.type] = (counts[c.type] || 0) + 1;
-                
                 let val = c.baseValue;
-                
-                // Apply Solo Bonus only if hand has exactly 1 card
                 if (isSoloHand) {
                     if (c.type === 'Q') val = 20;
                     if (c.type === 'QH') val = 40;
                 }
-                
                 total += val;
             });
 
-            // Update UI
             document.getElementById('totalDisplay').innerText = total;
 
-            // Update counters and button states
+            // Обновляем обычные карты
             ['6','7','8','10','J','K','A'].forEach(t => updateCounter(t, counts[t]));
             
-            // Special handling for Queens to show solo status
-            updateQueenUI('Q', counts['Q'], isSoloHand, 'btn-q', 'desc-Q');
-            updateQueenUI('QH', counts['QH'], isSoloHand, 'btn-qh', 'desc-QH');
+            // Обновляем Дам с учетом общего лимита
+            const qCount = counts['Q'] || 0;
+            const qhCount = counts['QH'] || 0;
+            const totalQueens = qCount + qhCount;
+
+            updateQueenUI('Q', qCount, totalQueens, isSoloHand, 'btn-q', 'desc-Q');
+            updateQueenUI('QH', qhCount, totalQueens, isSoloHand, 'btn-qh', 'desc-QH');
         }
 
         function updateCounter(type, count) {
             const el = document.getElementById(`count-${type}`);
             const btn = document.querySelector(`.btn-card[data-type="${type}"]`);
-            
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
-            
-            // Disable button if limit reached
-            if (count >= MAX_CARDS_PER_TYPE) {
-                btn.classList.add('disabled');
-            } else {
-                btn.classList.remove('disabled');
-            }
+            btn.classList.toggle('disabled', count >= MAX_CARDS_PER_TYPE);
         }
 
-        function updateQueenUI(type, count, isSoloHand, btnId, descId) {
+        function updateQueenUI(type, count, totalQueens, isSoloHand, btnId, descId) {
             const el = document.getElementById(`count-${type}`);
             const btn = document.getElementById(btnId);
             const desc = document.getElementById(descId);
@@ -241,9 +238,11 @@
             el.innerText = count || '';
             el.classList.toggle('visible', count > 0);
             
-            // Highlight only if this queen type exists AND hand is solo
-            const hasThisQueen = count > 0;
-            if (hasThisQueen && isSoloHand) {
+            // Блокировка, если общий лимит дам исчерпан
+            const isMaxedOut = totalQueens >= MAX_CARDS_PER_TYPE;
+            btn.classList.toggle('disabled', isMaxedOut);
+
+            if (count > 0 && isSoloHand) {
                 btn.classList.add('solo');
                 const bonus = type === 'Q' ? 20 : 40;
                 desc.innerText = `+${bonus} (Solo)`;
@@ -251,16 +250,8 @@
                 btn.classList.remove('solo');
                 desc.innerText = '+3';
             }
-            
-            // Also handle disabled state for queens
-            if (count >= MAX_CARDS_PER_TYPE) {
-                btn.classList.add('disabled');
-            } else {
-                btn.classList.remove('disabled');
-            }
         }
 
-        // Initialize
         recalculate();
     </script>
 </body>
