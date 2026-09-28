@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game v11.3</title>
+    <title>101 Game v12</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
-            --accent: #0a84ff; --danger: #ff453a; --success: #30d158; --warn: #ffd60a;
-            --border: #333333; --modal-bg: rgba(28, 28, 30, 0.95);
+            --accent: #0a84ff; --danger: #ff453a; --success: #30d158; 
+            --warn: #ffd60a; --heart: #ff375f; --border: #333333;
+            --modal-bg: rgba(28, 28, 30, 0.95);
         }
         @media (prefers-color-scheme: light) {
             :root {
                 --bg: #f2f2f7; --card: #ffffff; --text: #000000; --sub: #636366;
-                --accent: #007aff; --danger: #ff3b30; --success: #34c759; --warn: #ffcc00;
-                --border: #e5e5ea; --modal-bg: rgba(255, 255, 255, 0.95);
+                --accent: #007aff; --danger: #ff3b30; --success: #34c759; 
+                --warn: #ffcc00; --heart: #ff2d55; --border: #e5e5ea;
+                --modal-bg: rgba(255, 255, 255, 0.95);
             }
         }
 
@@ -70,11 +72,12 @@
         button { border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.1s; -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.92); opacity: 0.8; }
         
-        .actions { display: flex; gap: 8px; align-items: center; }
-        .btn-action { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 50%; }
+        .actions { display: flex; gap: 6px; align-items: center; }
+        .btn-action { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 50%; }
         .btn-plus { background: var(--success); color: black; }
         .btn-minus { background: var(--warn); color: black; }
-        .btn-del { background: transparent; color: var(--danger); font-size: 26px; width: 40px; }
+        .btn-calc { background: var(--card); color: var(--text); border: 1px solid var(--border); font-size: 20px; }
+        .btn-del { background: transparent; color: var(--danger); font-size: 24px; width: 40px; }
 
         .modal-overlay { 
             position: fixed; top:0; left:0; right:0; bottom:0; 
@@ -118,7 +121,7 @@
         .btn-reset { flex: 0.6; background: var(--card); color: var(--danger); padding: 16px; border-radius: 14px; border: 1px solid var(--border); }
         .btn-stats { flex: 0.6; background: var(--card); color: var(--text); padding: 16px; border-radius: 14px; border: 1px solid var(--border); font-size: 20px; }
 
-        /* FIXED STATS SHEET & OVERLAY */
+        /* STATS SHEET STYLES */
         .stats-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 140;
@@ -179,6 +182,69 @@
         .rank.top-1 { color: #ffd700; } .rank.top-2 { color: #c0c0c0; } .rank.top-3 { color: #cd7f32; }
         .s-name { flex: 1; font-weight: 500; padding-left: 10px; }
         .s-val { font-weight: 700; font-size: 18px; }
+
+        /* CALCULATOR MODAL STYLES */
+        .calc-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg); z-index: 300;
+            display: none; flex-direction: column; padding: 20px;
+            transform: translateY(100%); transition: transform 0.3s ease;
+        }
+        .calc-modal.open { display: flex; transform: translateY(0); }
+        
+        .calc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calc-title { font-size: 18px; font-weight: 700; }
+        .calc-close { width: 36px; height: 36px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--sub); }
+        
+        .calc-total-area { text-align: center; margin-bottom: 20px; }
+        .calc-total-label { font-size: 12px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .calc-total-value { font-size: 64px; font-weight: 800; line-height: 1; transition: transform 0.1s; }
+        .calc-total-value.bump { transform: scale(1.1); }
+
+        .calc-grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
+            flex: 1; align-content: start; max-width: 500px; margin: 0 auto; width: 100%;
+        }
+        .calc-btn {
+            background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+            height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.1s; position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .calc-btn:active { transform: scale(0.95); background: var(--border); }
+        .calc-btn.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(0.8); }
+        .calc-btn.shake { animation: shake 0.3s ease-in-out; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .calc-val { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
+        .calc-desc { font-size: 11px; color: var(--sub); }
+        .calc-count { 
+            position: absolute; top: 6px; right: 8px; 
+            font-size: 11px; font-weight: 600; color: var(--sub); opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .calc-count.visible { opacity: 1; }
+        
+        .calc-btn-q.solo .calc-count { color: var(--warn); opacity: 1; }
+        .calc-btn-qh.solo .calc-count { color: var(--heart); opacity: 1; }
+        .calc-btn-qh .calc-val { color: var(--heart); }
+
+        .calc-controls { 
+            display: flex; gap: 12px; margin-top: auto; padding-top: 20px; 
+            max-width: 500px; width: 100%; margin-left: auto; margin-right: auto;
+        }
+        .calc-ctrl { 
+            flex: 1; padding: 16px; border-radius: 14px; border: none; 
+            font-size: 16px; font-weight: 600; cursor: pointer; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .calc-reset { background: var(--card); color: var(--danger); border: 1px solid var(--border); }
+        .calc-apply { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
@@ -219,7 +285,7 @@
         <button class="btn-round" onclick="endRound()">Завершить раунд</button>
     </div>
 
-    <!-- Overlay for tapping outside -->
+    <!-- Overlay for stats tap -->
     <div id="statsOverlay" class="stats-overlay" onclick="closeStats()"></div>
 
     <!-- Stats Sheet -->
@@ -237,6 +303,72 @@
         <div class="stats-list" id="statsList"></div>
     </div>
 
+    <!-- INTEGRATED CALCULATOR MODAL -->
+    <div id="calcModal" class="calc-modal">
+        <div class="calc-header">
+            <div class="calc-title" id="calcPlayerName">Калькулятор</div>
+            <div class="calc-close" onclick="closeCalc(false)">✕</div>
+        </div>
+        
+        <div class="calc-total-area">
+            <div class="calc-total-label">Итого очков</div>
+            <div class="calc-total-value" id="calcTotalDisplay">0</div>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-btn" data-type="6" onclick="calcAddCard('6', 6)">
+                <span class="calc-count" id="calc-count-6">0</span>
+                <span class="calc-val">6</span>
+                <span class="calc-desc">+6</span>
+            </div>
+            <div class="calc-btn" data-type="7" onclick="calcAddCard('7', 7)">
+                <span class="calc-count" id="calc-count-7">0</span>
+                <span class="calc-val">7</span>
+                <span class="calc-desc">+7</span>
+            </div>
+            <div class="calc-btn" data-type="8" onclick="calcAddCard('8', 8)">
+                <span class="calc-count" id="calc-count-8">0</span>
+                <span class="calc-val">8</span>
+                <span class="calc-desc">+8</span>
+            </div>
+            <div class="calc-btn" data-type="10" onclick="calcAddCard('10', 10)">
+                <span class="calc-count" id="calc-count-10">0</span>
+                <span class="calc-val">10</span>
+                <span class="calc-desc">+10</span>
+            </div>
+            <div class="calc-btn" data-type="J" onclick="calcAddCard('J', 2)">
+                <span class="calc-count" id="calc-count-J">0</span>
+                <span class="calc-val">J</span>
+                <span class="calc-desc">+2</span>
+            </div>
+            <div class="calc-btn calc-btn-q" id="calc-btn-q" data-type="Q" onclick="calcAddCard('Q', 3)">
+                <span class="calc-count" id="calc-count-Q">0</span>
+                <span class="calc-val">Q</span>
+                <span class="calc-desc" id="calc-desc-Q">+3</span>
+            </div>
+            <div class="calc-btn calc-btn-qh" id="calc-btn-qh" data-type="QH" onclick="calcAddCard('QH', 3)">
+                <span class="calc-count" id="calc-count-QH">0</span>
+                <span class="calc-val">Q♥</span>
+                <span class="calc-desc" id="calc-desc-QH">+3</span>
+            </div>
+            <div class="calc-btn" data-type="K" onclick="calcAddCard('K', 4)">
+                <span class="calc-count" id="calc-count-K">0</span>
+                <span class="calc-val">K</span>
+                <span class="calc-desc">+4</span>
+            </div>
+            <div class="calc-btn" data-type="A" onclick="calcAddCard('A', 11)">
+                <span class="calc-count" id="calc-count-A">0</span>
+                <span class="calc-val">A</span>
+                <span class="calc-desc">+11</span>
+            </div>
+        </div>
+
+        <div class="calc-controls">
+            <button class="calc-ctrl calc-reset" onclick="resetCalc()">Сброс</button>
+            <button class="calc-ctrl calc-apply" onclick="applyCalcResult()">Применить</button>
+        </div>
+    </div>
+
     <script>
         // --- State & Storage Migration ---
         if (!localStorage.getItem('101_hist_v11') && localStorage.getItem('101_hist_v10')) {
@@ -252,6 +384,14 @@
         let isMinusMode = false;
         let currentStatTab = 'points';
         let selectedDate = new Date().toISOString().split('T')[0];
+
+        // Calculator State
+        let calcCards = [];
+        let calcTargetPlayerId = null;
+        const CALC_LIMITS = {
+            '6': 4, '7': 4, '8': 4, '10': 4, 'J': 4, 'K': 4, 'A': 4,
+            'Q': 3, 'QH': 1
+        };
 
         function save() {
             localStorage.setItem('101_v11', JSON.stringify(players));
@@ -561,6 +701,153 @@
             });
         }
 
+        // --- INTEGRATED CALCULATOR LOGIC ---
+        const calcModal = document.getElementById('calcModal');
+        const calcTotalDisplay = document.getElementById('calcTotalDisplay');
+        const calcPlayerNameEl = document.getElementById('calcPlayerName');
+
+        function openCalc(playerId) {
+            calcTargetPlayerId = playerId;
+            const p = players.find(x => x.id === playerId);
+            calcPlayerNameEl.innerText = p ? p.name : 'Калькулятор';
+            
+            // Reset calculator state
+            calcCards = [];
+            calcRecalculate();
+            
+            calcModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCalc(apply) {
+            calcModal.classList.remove('open');
+            document.body.style.overflow = '';
+            if (!apply) {
+                calcTargetPlayerId = null;
+            }
+        }
+
+        function calcAddCard(type, baseValue) {
+            // Check individual limit
+            const currentCount = calcCards.filter(c => c.type === type).length;
+            if (currentCount >= CALC_LIMITS[type]) {
+                calcTriggerShake(type); return;
+            }
+
+            // Check combined Queen limit
+            if (type === 'Q' || type === 'QH') {
+                const qCount = calcCards.filter(c => c.type === 'Q').length;
+                const qhCount = calcCards.filter(c => c.type === 'QH').length;
+                if ((qCount + qhCount) >= 4) {
+                    calcTriggerShake(type); return;
+                }
+            }
+
+            calcCards.push({ type, baseValue });
+            calcRecalculate();
+            
+            calcTotalDisplay.classList.add('bump');
+            setTimeout(() => calcTotalDisplay.classList.remove('bump'), 100);
+        }
+
+        function calcTriggerShake(type) {
+            const btn = document.querySelector(`.calc-btn[data-type="${type}"]`);
+            if (btn) {
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 300);
+            }
+        }
+
+        function resetCalc() {
+            calcCards = [];
+            calcRecalculate();
+        }
+
+        function applyCalcResult() {
+            if (calcCards.length === 0 || !calcTargetPlayerId) {
+                closeCalc(false);
+                return;
+            }
+
+            const total = parseInt(calcTotalDisplay.innerText);
+            const p = players.find(x => x.id === calcTargetPlayerId);
+            
+            if (p) {
+                p.score += total;
+                trackPoints(p.name, total);
+
+                // Apply game rules after calculator result
+                if (p.score >= 102) {
+                    showToast(`💀 ${p.name} перебрал! Новая игра`, true);
+                    players.forEach(pl => pl.score = 0);
+                    gameCount++;
+                    roundCount = 1;
+                }
+            }
+
+            closeCalc(true);
+            save();
+        }
+
+        function calcRecalculate() {
+            const isSoloHand = calcCards.length === 1;
+            let total = 0;
+            const counts = {};
+
+            calcCards.forEach(c => {
+                counts[c.type] = (counts[c.type] || 0) + 1;
+                let val = c.baseValue;
+                if (isSoloHand) {
+                    if (c.type === 'Q') val = 20;
+                    if (c.type === 'QH') val = 40;
+                }
+                total += val;
+            });
+
+            calcTotalDisplay.innerText = total;
+
+            // Update regular cards
+            ['6','7','8','10','J','K','A'].forEach(t => calcUpdateCounter(t, counts[t]));
+            
+            // Update Queens
+            const qCount = counts['Q'] || 0;
+            const qhCount = counts['QH'] || 0;
+            const totalQueens = qCount + qhCount;
+
+            calcUpdateQueenUI('Q', qCount, totalQueens, isSoloHand, 'calc-btn-q', 'calc-desc-Q');
+            calcUpdateQueenUI('QH', qhCount, totalQueens, isSoloHand, 'calc-btn-qh', 'calc-desc-QH');
+        }
+
+        function calcUpdateCounter(type, count) {
+            const el = document.getElementById(`calc-count-${type}`);
+            const btn = document.querySelector(`.calc-btn[data-type="${type}"]`);
+            el.innerText = count || '';
+            el.classList.toggle('visible', count > 0);
+            btn.classList.toggle('disabled', count >= CALC_LIMITS[type]);
+        }
+
+        function calcUpdateQueenUI(type, count, totalQueens, isSoloHand, btnId, descId) {
+            const el = document.getElementById(`calc-count-${type}`);
+            const btn = document.getElementById(btnId);
+            const desc = document.getElementById(descId);
+            
+            el.innerText = count || '';
+            el.classList.toggle('visible', count > 0);
+            
+            const individualMaxed = count >= CALC_LIMITS[type];
+            const combinedMaxed = totalQueens >= 4;
+            btn.classList.toggle('disabled', individualMaxed || combinedMaxed);
+
+            if (count > 0 && isSoloHand) {
+                btn.classList.add('solo');
+                const bonus = type === 'Q' ? 20 : 40;
+                desc.innerText = `+${bonus} (Solo)`;
+            } else {
+                btn.classList.remove('solo');
+                desc.innerText = '+3';
+            }
+        }
+
         // --- UI Helpers ---
         function showToast(msg, isError) {
             const t = document.getElementById('toast');
@@ -600,6 +887,7 @@
                         <div class="actions">
                             <button class="btn-action btn-minus" onclick="openModal(${p.id}, true)">−</button>
                             <button class="btn-action btn-plus" onclick="openModal(${p.id}, false)">+</button>
+                            <button class="btn-action btn-calc" onclick="openCalc(${p.id})">🧮</button>
                             <button class="btn-action btn-del" onclick="removePlayer(${p.id})">×</button>
                         </div>
                     </div>`;
