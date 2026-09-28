@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Simple</title>
+    <title>101 Game</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
@@ -15,9 +15,14 @@
             padding: 20px; margin: 0; padding-bottom: 80px; 
         }
         
-        /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .game-badge { background: var(--card); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; border: 1px solid #333; }
+        /* Header Stats */
+        .stats-bar { display: flex; justify-content: space-between; margin-bottom: 25px; gap: 10px; }
+        .stat-box { 
+            flex: 1; background: var(--card); padding: 10px; border-radius: 16px; 
+            text-align: center; border: 1px solid #333; 
+        }
+        .stat-label { color: var(--sub); font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .stat-val { font-size: 20px; font-weight: 700; }
         
         /* Setup */
         .setup-area { display: flex; gap: 10px; margin-bottom: 25px; }
@@ -91,9 +96,15 @@
 </head>
 <body>
 
-    <div class="header">
-        <div style="font-size: 24px; font-weight: 800;">🃏 101</div>
-        <div class="game-badge">Игра <span id="gameNum">1</span></div>
+    <div class="stats-bar">
+        <div class="stat-box">
+            <span class="stat-label">Игра</span>
+            <span class="stat-val" id="gameNum">1</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Раунд</span>
+            <span class="stat-val" id="roundNum">1</span>
+        </div>
     </div>
 
     <div class="setup-area">
@@ -107,7 +118,6 @@
     <div id="scoreModal" class="modal-overlay">
         <div class="modal">
             <h3 id="modalTitle">Очки</h3>
-            <!-- inputmode="decimal" ensures minus sign appears on iOS keypad -->
             <input type="number" id="scoreInput" inputmode="decimal">
             <div class="modal-btns">
                 <button class="btn-cancel" onclick="closeModal()">Отмена</button>
@@ -118,17 +128,19 @@
 
     <div id="toast" class="toast">🔥 Перебор! Игра +1</div>
     
-    <button class="reset-btn" onclick="fullReset()">Сброс игры</button>
+    <button class="reset-btn" onclick="fullReset()">Сброс</button>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_simple_v5')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_game_v5')) || 1;
+        let players = JSON.parse(localStorage.getItem('101_v6')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v6')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_round_v6')) || 1;
         let targetId = null;
-        let isMinusMode = false; // Flag to track penalty mode
+        let isMinusMode = false;
 
         function save() {
-            localStorage.setItem('101_simple_v5', JSON.stringify(players));
-            localStorage.setItem('101_game_v5', gameCount);
+            localStorage.setItem('101_v6', JSON.stringify(players));
+            localStorage.setItem('101_game_v6', gameCount);
+            localStorage.setItem('101_round_v6', roundCount);
             render();
         }
 
@@ -156,7 +168,6 @@
             input.value = '';
             document.getElementById('scoreModal').style.display = 'flex';
             
-            // Focus and set initial value after modal renders
             setTimeout(() => {
                 input.focus();
                 if (isMinus) input.value = '-';
@@ -177,8 +188,7 @@
             let val = parseInt(valStr);
             if(isNaN(val)) { closeModal(); return; }
 
-            // SAFETY FIX: If opened via Minus button, force negative value
-            // This handles cases where iOS keypad didn't show minus or user forgot it
+            // SAFETY: Force negative if opened via Minus button
             if (isMinusMode && val > 0) {
                 val = -val;
             }
@@ -193,6 +203,8 @@
                 showToast(`💀 ${p.name} перебрал (${p.score})`);
                 p.score = 0;
                 gameCount++;
+                // Optional: increment round on bust? Usually yes in card games.
+                // roundCount++; 
             }
 
             closeModal();
@@ -203,6 +215,7 @@
             if(!confirm("Сбросить всю игру?")) return;
             players.forEach(p => p.score = 0);
             gameCount = 1;
+            roundCount = 1;
             save();
         }
 
@@ -222,6 +235,8 @@
 
         function render() {
             document.getElementById('gameNum').innerText = gameCount;
+            document.getElementById('roundNum').innerText = roundCount;
+            
             const area = document.getElementById('gameArea');
             area.innerHTML = '';
 
