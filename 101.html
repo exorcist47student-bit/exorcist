@@ -84,8 +84,8 @@
     <div id="scoreModal" class="modal-overlay">
         <div class="modal">
             <h3 id="modalTitle">Очки</h3>
-            <!-- type="number" guarantees minus sign on iOS keypad -->
-            <input type="number" id="scoreInput" pattern="-?[0-9]*" inputmode="numeric">
+            <!-- CHANGED: inputmode="decimal" forces keypad with minus sign on iOS -->
+            <input type="number" id="scoreInput" inputmode="decimal">
             <div class="modal-btns">
                 <button class="btn-cancel" onclick="closeModal()">Отмена</button>
                 <button class="btn-ok" onclick="confirmScore()">OK</button>
@@ -101,15 +101,16 @@
     </div>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_pro_v3')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_pro_game_v3')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_pro_round_v3')) || 1;
+        let players = JSON.parse(localStorage.getItem('101_pro_v4')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_pro_game_v4')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_pro_round_v4')) || 1;
         let targetId = null;
+        let isMinusMode = false; // Flag to track if we are in penalty mode
 
         function save() {
-            localStorage.setItem('101_pro_v3', JSON.stringify(players));
-            localStorage.setItem('101_pro_game_v3', gameCount);
-            localStorage.setItem('101_pro_round_v3', roundCount);
+            localStorage.setItem('101_pro_v4', JSON.stringify(players));
+            localStorage.setItem('101_pro_game_v4', gameCount);
+            localStorage.setItem('101_pro_round_v4', roundCount);
             render();
         }
 
@@ -123,9 +124,10 @@
             }
         }
 
-        // FIXED: Now handles mode explicitly and pre-fills minus
         function openModal(id, isMinus) {
             targetId = id;
+            isMinusMode = isMinus; // Save mode state
+            
             const p = players.find(x => x.id === id);
             const title = document.getElementById('modalTitle');
             const input = document.getElementById('scoreInput');
@@ -133,22 +135,18 @@
             title.innerText = `${p.name} — ${isMinus ? 'ШТРАФ' : 'ОЧКИ'}`;
             title.style.color = isMinus ? 'var(--warn)' : 'var(--sub)';
             
-            // Pre-fill logic
-            if (isMinus) {
-                input.value = '-'; 
-            } else {
-                input.value = '';
-            }
+            // Clear input first
+            input.value = '';
             
             document.getElementById('scoreModal').style.display = 'flex';
             
-            // Force focus and keyboard open
+            // Focus and set value AFTER modal is visible to ensure iOS picks it up
             setTimeout(() => {
                 input.focus();
-                // Select all text so typing replaces the minus if needed, 
-                // or appends if user just types numbers
-                input.setSelectionRange(1, 1); 
-            }, 50);
+                if (isMinus) {
+                    input.value = '-';
+                }
+            }, 100);
         }
 
         function closeModal() {
@@ -160,22 +158,30 @@
             const input = document.getElementById('scoreInput');
             let valStr = input.value;
             
-            // Handle edge case where user only typed "-"
-            if(valStr === '-' || valStr === '') { closeModal(); return; }
+            if(valStr === '-' || valStr === '' || valStr === null) { closeModal(); return; }
             
             let val = parseInt(valStr);
             if(isNaN(val)) { closeModal(); return; }
+
+            // LOGIC FIX: If we opened modal via MINUS button, force value to be negative
+            // even if user forgot to type the sign or iOS ate it.
+            if (isMinusMode && val > 0) {
+                val = -val;
+            }
 
             const p = players.find(x => x.id === targetId);
             if(!p) return;
 
             p.current += val;
 
-            // Rule: >= 102 triggers Game Over for this player
+            // Rule: >= 102 triggers Game Over
             if (p.current >= 102) {
-                showToast(`💀 ${p.name} перебрал (${p.current})`);
-                p.current = 0; // Reset current table score
-                gameCount++;   // Increment Game counter
+                showToast(` ${p.name} перебрал (${p.current})`);
+                p.current = 0;
+                gameCount++;
+            } else if (p.current < 0) {
+                // Optional: prevent score from going below 0? 
+                // Usually in 101 you can go negative, so we leave it.
             }
 
             closeModal();
@@ -223,7 +229,6 @@
             const area = document.getElementById('gameArea');
             area.innerHTML = '';
 
-            // Sort: Active players first, then by Bank descending
             players.sort((a,b) => {
                 if (a.current > 0 && b.current === 0) return -1;
                 if (a.current === 0 && b.current > 0) return 1;
@@ -232,7 +237,6 @@
 
             players.forEach(p => {
                 const rem = p.current > 0 ? (101 - p.current) : '-';
-                // Color coding for remaining points
                 let remColor = 'color:var(--warn)';
                 if (p.current === 0) remColor = 'color:#48484a';
                 else if (p.current > 90) remColor = 'color:var(--danger)';
