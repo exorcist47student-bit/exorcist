@@ -12,7 +12,7 @@
         body { 
             background: var(--bg); color: var(--text); 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            padding: 20px; margin: 0; padding-bottom: 100px; /* Отступ для нижней панели */
+            padding: 20px; margin: 0; padding-bottom: 100px;
         }
         
         /* Header Stats */
@@ -136,7 +136,7 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">🔥 Перебор! Игра +1</div>
+    <div id="toast" class="toast">🔥 Перебор! Новая игра</div>
     
     <!-- Bottom Controls -->
     <div class="bottom-panel">
@@ -145,16 +145,16 @@
     </div>
 
     <script>
-        let players = JSON.parse(localStorage.getItem('101_v7')) || [];
-        let gameCount = parseInt(localStorage.getItem('101_game_v7')) || 1;
-        let roundCount = parseInt(localStorage.getItem('101_round_v7')) || 1;
+        let players = JSON.parse(localStorage.getItem('101_v8')) || [];
+        let gameCount = parseInt(localStorage.getItem('101_game_v8')) || 1;
+        let roundCount = parseInt(localStorage.getItem('101_round_v8')) || 1;
         let targetId = null;
         let isMinusMode = false;
 
         function save() {
-            localStorage.setItem('101_v7', JSON.stringify(players));
-            localStorage.setItem('101_game_v7', gameCount);
-            localStorage.setItem('101_round_v7', roundCount);
+            localStorage.setItem('101_v8', JSON.stringify(players));
+            localStorage.setItem('101_game_v8', gameCount);
+            localStorage.setItem('101_round_v8', roundCount);
             render();
         }
 
@@ -212,18 +212,23 @@
 
             p.score += val;
 
-            // Rule: >= 102 triggers Game Over for this player
+            // Rule: >= 102 triggers FULL RESET (New Game)
             if (p.score >= 102) {
                 showToast(`💀 ${p.name} перебрал (${p.score})`);
-                p.score = 0;
+                
+                // Reset everyone's current score
+                players.forEach(pl => pl.score = 0);
+                
+                // Increment Game, Reset Round to 1
                 gameCount++;
+                roundCount = 1;
             }
 
             closeModal();
             save();
         }
 
-        // NEW: Manual Round End
+        // Manual Round End
         function endRound() {
             if(!confirm("Раунд завершен? Переходим к следующему.")) return;
             roundCount++;
