@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>101 Game v12</title>
+    <title>101 Game v12.1</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff; --sub: #8e8e93;
@@ -213,13 +213,6 @@
         }
         .calc-btn:active { transform: scale(0.95); background: var(--border); }
         .calc-btn.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(0.8); }
-        .calc-btn.shake { animation: shake 0.3s ease-in-out; }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
         
         .calc-val { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
         .calc-desc { font-size: 11px; color: var(--sub); }
@@ -538,22 +531,33 @@
                 return; 
             }
 
-            // DETERMINE WINNER
+            // DETERMINE WINNER BY ABSOLUTE MINIMUM SCORE
+            // Filter out players with 0 score (didn't play this round)
+            const activePlayers = players.filter(p => p.score !== 0);
+            
+            if (activePlayers.length === 0) {
+                showToast(`✅ Раунд завершен. Ничья`, false);
+                roundCount++;
+                save();
+                return;
+            }
+
+            // Find minimum score (mathematically lowest, e.g., -40 < 22)
             let minScore = Infinity;
             let winners = [];
             
-            players.forEach(p => {
-                if (p.score > 0 && p.score < minScore) {
+            activePlayers.forEach(p => {
+                if (p.score < minScore) {
                     minScore = p.score;
                     winners = [p.name];
-                } else if (p.score > 0 && p.score === minScore) {
+                } else if (p.score === minScore) {
                     winners.push(p.name);
                 }
             });
 
             if (winners.length > 0) {
                 winners.forEach(w => trackWin(w));
-                showToast(`✅ Раунд завершен. Победитель: ${winners.join(', ')}`, false);
+                showToast(`✅ Раунд завершен. Победитель: ${winners.join(', ')} (${minScore})`, false);
             } else {
                 showToast(`✅ Раунд завершен`, false);
             }
@@ -731,7 +735,7 @@
             // Check individual limit
             const currentCount = calcCards.filter(c => c.type === type).length;
             if (currentCount >= CALC_LIMITS[type]) {
-                calcTriggerShake(type); return;
+                return; // Silent fail for cleaner UX
             }
 
             // Check combined Queen limit
@@ -739,7 +743,7 @@
                 const qCount = calcCards.filter(c => c.type === 'Q').length;
                 const qhCount = calcCards.filter(c => c.type === 'QH').length;
                 if ((qCount + qhCount) >= 4) {
-                    calcTriggerShake(type); return;
+                    return;
                 }
             }
 
@@ -748,14 +752,6 @@
             
             calcTotalDisplay.classList.add('bump');
             setTimeout(() => calcTotalDisplay.classList.remove('bump'), 100);
-        }
-
-        function calcTriggerShake(type) {
-            const btn = document.querySelector(`.calc-btn[data-type="${type}"]`);
-            if (btn) {
-                btn.classList.add('shake');
-                setTimeout(() => btn.classList.remove('shake'), 300);
-            }
         }
 
         function resetCalc() {
@@ -778,7 +774,7 @@
 
                 // Apply game rules after calculator result
                 if (p.score >= 102) {
-                    showToast(`💀 ${p.name} перебрал! Новая игра`, true);
+                    showToast(` ${p.name} перебрал! Новая игра`, true);
                     players.forEach(pl => pl.score = 0);
                     gameCount++;
                     roundCount = 1;
@@ -862,18 +858,14 @@
             const area = document.getElementById('gameArea');
             area.innerHTML = '';
 
-            players.sort((a,b) => {
-                if (a.score > 0 && b.score === 0) return -1;
-                if (a.score === 0 && b.score > 0) return 1;
-                return b.score - a.score;
-            });
-
+            // FIXED: NO SORTING. Players stay in original order.
             players.forEach(p => {
-                const rem = p.score > 0 ? (101 - p.score) : '-';
+                const rem = p.score > 0 ? (101 - p.score) : (p.score < 0 ? '+' + Math.abs(p.score) : '-');
                 let remColor = 'color:var(--sub)';
                 if (p.score > 90) remColor = 'color:var(--danger)';
                 else if (p.score > 70) remColor = 'color:var(--warn)';
                 else if (p.score > 0) remColor = 'color:var(--sub)';
+                else if (p.score < 0) remColor = 'color:var(--success)'; // Green for negative (good)
 
                 area.innerHTML += `
                     <div class="player-card">
